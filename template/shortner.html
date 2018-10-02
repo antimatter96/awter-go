@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Home</title>
+		<link rel="stylesheet" type="text/css" href="static/custom.css">
+	</head>
+	<body>
+		
+		<nav>
+			<h3>
+				Otter
+			</h3>
+			<div id="nav-links">
+				<a href="/login">Login<a/>
+				<a href="/register">Signup<a/>
+			</div>
+		</nav>
+		<br>
+		<form action="short{{if .url_next }}?url_next={{.url_next}}{{end}}" method ="post">
+			<p>
+				<input name="url" type="url" required>
+			</p>
+			<p>
+        <label>Password protect</label><input name="password_protect" type="checkbox">
+				<input name="password" type="password">
+			</p>
+			<p>
+				{{ if .error }}
+					{{.error}}
+				{{end}}
+			</p>
+			<input type=submit value="Login">
+		</form>
+	</body>
+</html>

@@ -1,0 +1,12 @@
+{
+	"keys" : ["output","port","bcrypt-cost", "db-connection-string","cookie","redisAddress"],
+	"output":"output.txt",
+	"port":":8080",
+	"bcrypt-cost": 12,
+	"db-connection-string":"user:password@/name?parseTime=true",
+	"redisAddress": "127.0.0.1:6379",
+	"cookie":{
+		"hashKey": "",
+		"blockKey":""
+	}
+}

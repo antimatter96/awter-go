@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Home</title>
+	</head>
+	<body>
+		<a href="/login">Login<a/>
+		<a href="/register">Signup<a/>
+		
+		<br>
+		<form action="login" method ="post">
+			<input name="email">
+			<input name="password">
+			<input type=submit>
+			{{ if .Error }}
+				{{.Error}}
+			{{end}}
+		</form>
+	</body>
+</html>
