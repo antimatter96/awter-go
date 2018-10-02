@@ -21,8 +21,9 @@
 				<input name="url" type="url" required>
 			</p>
 			<p>
-        <label>Password protect</label><input name="password_protect" type="checkbox">
-				<input name="password" type="password">
+        <label>Password protect<input id="password_protect" name="password_protect" type="checkbox" onclick="markRequired()"></label>
+				<input id="url_password" name="password" type="password">
+				<label>Show Password<input name="show_password" type="checkbox" onclick="showHidePassword()"></label>
 			</p>
 			<p>
 				{{ if .error }}
@@ -31,5 +32,24 @@
 			</p>
 			<input type=submit value="Login">
 		</form>
+		<script>
+				function showHidePassword() {
+					let x = document.getElementById("url_password");
+					if (x.type === "password") {
+						 x.type = "text";
+					} else {
+						x.type = "password";
+					}
+				}
+				function markRequired() {
+					let checkBox = document.getElementById("password_protect");
+					let input = document.getElementById("url_password");
+					if (checkBox.checked) {
+						input.required = true;
+					} else {
+						input.required = false;
+					}
+				}
+			</script>
 	</body>
 </html>
