@@ -86,6 +86,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 		}
 	}
 
+	var hashedPassword string
 	if password_protect {
 		hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
 		if err != nil {
@@ -94,10 +95,10 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 			})
 			return
 		}
-		password = string(hashed)
+		hashedPassword = string(hashed)
 	}
 
-	err = urlService.CreatePassword(shortURL, url, password)
+	err = urlService.CreatePassword(shortURL, url, hashedPassword)
 	if err != nil {
 		shortnerTemplate.Execute(w, map[string]interface{}{
 			"error": constErrInternalError,
@@ -106,7 +107,9 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 	}
 
 	createdTemplate.Execute(w, map[string]interface{}{
-		"shortURL": shortURL,
+		"shortURL":         shortURL,
+		"password_protect": password_protect,
+		"password":         password,
 	})
 
 	// present, userID, passwordHash, errGetPassword := userService.GetPasswordHash("email")
