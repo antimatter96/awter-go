@@ -14,7 +14,7 @@ type URLService interface {
 
 	CreateNoPassword(string, string) error
 	CreatePassword(string, string, string) error
-	GetLong(string) (bool, string, error)
+	GetLong(string) (bool, string, string, error)
 	PresentShort(string) (bool, error)
 }
 
@@ -71,16 +71,17 @@ func (u *urls) CreatePassword(short, long, password string) error {
 	return nil
 }
 
-func (u *urls) GetLong(short string) (bool, string, error) {
+func (u *urls) GetLong(short string) (bool, string, string, error) {
 	var longURL string
-	err := u.getLong.QueryRow(short).Scan(&longURL)
+	var password string
+	err := u.getLong.QueryRow(short).Scan(&longURL, &password)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return false, "", nil
+			return false, "", "", nil
 		}
-		return false, "", err
+		return false, "", "", err
 	}
-	return true, longURL, nil
+	return true, longURL, password, nil
 }
 
 func (u *urls) PresentShort(short string) (bool, error) {

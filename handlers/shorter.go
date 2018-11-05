@@ -19,6 +19,7 @@ import (
 func ShortnerGet(ctx context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	shortnerTemplate = template.Must(template.ParseFiles("./template/shortner.html"))
 	createdTemplate = template.Must(template.ParseFiles("./template/created.html"))
+	elongateTemplate = template.Must(template.ParseFiles("./template/elongate.html"))
 	r.ParseForm()
 	var urlNext string
 	if len(r.Form["url_next"]) > 0 {
@@ -113,6 +114,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 		"shortURL":         shortURL,
 		"password_protect": password_protect,
 		"password":         password,
+		"longURL":          url,
 	})
 
 	// present, userID, passwordHash, errGetPassword := userService.GetPasswordHash("email")
@@ -176,6 +178,33 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 	// }
 
 	// loginTemplate.Execute(w, nil)
+}
+
+func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	elongateTemplate = template.Must(template.ParseFiles("./template/elongate.html"))
+	shortURL := ps.ByName("id")
+
+	present, longURL, password, err := urlService.GetLong(shortURL)
+	if err != nil {
+		elongateTemplate.Execute(w, map[string]interface{}{
+			"error": constErrInternalError,
+		})
+		return
+	}
+	if !present {
+		elongateTemplate.Execute(w, map[string]interface{}{
+			"error": constErrURLMissing,
+		})
+		return
+	}
+	if password != "" {
+		elongateTemplate.Execute(w, map[string]interface{}{
+			"shortURL": shortURL,
+			"error":    constErrPasswordMissing,
+		})
+		return
+	}
+	http.Redirect(w, r, longURL, http.StatusSeeOther)
 }
 
 func generateRandomString2(length int) (string, error) {
