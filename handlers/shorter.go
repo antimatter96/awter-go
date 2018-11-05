@@ -18,21 +18,12 @@ import (
 // NewLoginHandlerGet is userd asd
 func ShortnerGet(ctx context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	shortnerTemplate = template.Must(template.ParseFiles("./template/shortner.html"))
-	createdTemplate = template.Must(template.ParseFiles("./template/created.html"))
-	elongateTemplate = template.Must(template.ParseFiles("./template/elongate.html"))
-	r.ParseForm()
-	var urlNext string
-	if len(r.Form["url_next"]) > 0 {
-		urlNext = r.Form["url_next"][0]
-	}
-	shortnerTemplate.Execute(w, map[string]interface{}{
-		"url_next": urlNext,
-	})
+	shortnerTemplate.Execute(w, nil)
 }
 
 // NewLoginHandlerPost us
 func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-
+	createdTemplate = template.Must(template.ParseFiles("./template/created.html"))
 	errParseForm := r.ParseForm()
 
 	if errParseForm != nil {
@@ -49,7 +40,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 	}
 
 	url := r.FormValue("url")
-	password_protect := r.FormValue("password_protect") == "on"
+	passwordProtect := r.FormValue("passwordProtect") == "on"
 	password := r.FormValue("password")
 
 	if url == "" || !govalidator.IsURL(url) {
@@ -60,7 +51,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 		return
 	}
 
-	if password_protect && password == "" {
+	if passwordProtect && password == "" {
 		shortnerTemplate.Execute(w, map[string]interface{}{
 			"error":    constErrPasswordMissing,
 			"url_next": urlNext,
@@ -91,7 +82,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 	}
 
 	var hashedPassword string
-	if password_protect {
+	if passwordProtect {
 		hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
 		if err != nil {
 			shortnerTemplate.Execute(w, map[string]interface{}{
@@ -111,73 +102,12 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 	}
 
 	createdTemplate.Execute(w, map[string]interface{}{
-		"shortURL":         shortURL,
-		"password_protect": password_protect,
-		"password":         password,
-		"longURL":          url,
+		"shortURL":        shortURL,
+		"passwordProtect": passwordProtect,
+		"password":        password,
+		"longURL":         url,
 	})
 
-	// present, userID, passwordHash, errGetPassword := userService.GetPasswordHash("email")
-
-	// if errGetPassword != nil {
-	// 	loginTemplate.Execute(w, map[string]interface{}{
-	// 		"error":    constErrInternalError,
-	// 		"url_next": urlNext,
-	// 	})
-	// 	return
-	// }
-
-	// if !present {
-	// 	loginTemplate.Execute(w, map[string]interface{}{
-	// 		"error":    constErrNotRegistered,
-	// 		"url_next": urlNext,
-	// 	})
-	// 	return
-	// }
-
-	// verified := checkPassword(&password, &passwordHash)
-
-	// if !verified {
-	// 	fmt.Println("Wrong passwword")
-	// 	loginTemplate.Execute(w, map[string]interface{}{
-	// 		"error":    constErrPasswordMatchFailed,
-	// 		"url_next": urlNext,
-	// 	})
-	// 	//loginTemplate.Execute(w, )
-	// 	return
-	// }
-
-	// fmt.Println(userID)
-
-	// newSessionID, errGen := generateRandomString(48)
-	// if errGen != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// plainValue := map[string]string{"sessionid": newSessionID}
-	// encodedValue, errCookieEncode := cookie.Encode("sessionid", plainValue)
-
-	// if errCookieEncode != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// } else {
-	// 	newCookie := &http.Cookie{
-	// 		Name:     "sessionid",
-	// 		Value:    encodedValue,
-	// 		Path:     "/",
-	// 		HttpOnly: true,
-	// 	}
-	// 	http.SetCookie(w, newCookie)
-
-	// 	errSetInCache := cache.SetSessionValue(newSessionID, "userId", userID)
-	// 	if errSetInCache != nil {
-	// 		w.WriteHeader(http.StatusInternalServerError)
-	// 		return
-	// 	}
-	// 	http.Redirect(w, r, urlNext, http.StatusSeeOther)
-	// }
-
-	// loginTemplate.Execute(w, nil)
 }
 
 func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -199,8 +129,62 @@ func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, ps
 	}
 	if password != "" {
 		elongateTemplate.Execute(w, map[string]interface{}{
-			"shortURL": shortURL,
-			"error":    constErrPasswordMissing,
+			"shortURL":        shortURL,
+			"error":           constErrPasswordMissing,
+			"passwordProtect": true,
+		})
+		return
+	}
+	http.Redirect(w, r, longURL, http.StatusSeeOther)
+}
+
+func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	errParseForm := r.ParseForm()
+
+	if errParseForm != nil {
+		fmt.Println("parse error", errParseForm)
+		shortnerTemplate.Execute(w, map[string]interface{}{
+			"error": constErrInternalError,
+		})
+		return
+	}
+
+	elongateTemplate = template.Must(template.ParseFiles("./template/elongate.html"))
+	shortURL := ps.ByName("id")
+
+	fmt.Println(shortURL, len(shortURL))
+	present, longURL, password, err := urlService.GetLong(shortURL)
+	if err != nil {
+		elongateTemplate.Execute(w, map[string]interface{}{
+			"error": constErrInternalError,
+		})
+		return
+	}
+	if !present {
+		elongateTemplate.Execute(w, map[string]interface{}{
+			"error": constErrURLMissing,
+		})
+		return
+	}
+	if password == "" {
+		http.Redirect(w, r, longURL, http.StatusSeeOther)
+		return
+	}
+	user_password := r.FormValue("password")
+	if user_password == "" {
+		elongateTemplate.Execute(w, map[string]interface{}{
+			"shortURL":        shortURL,
+			"error":           constErrPasswordMissing,
+			"passwordProtect": true,
+		})
+		return
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(password), []byte(user_password))
+	if err != nil {
+		elongateTemplate.Execute(w, map[string]interface{}{
+			"shortURL":        shortURL,
+			"error":           constErrPasswordMatchFailed,
+			"passwordProtect": true,
 		})
 		return
 	}

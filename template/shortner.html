@@ -29,8 +29,8 @@
 								<small id="urlHELP" class="form-text text-muted">URLs should be include http</small>
 							</div>
 							<div class="form-group form-check">
-								<input type="checkbox" class="form-check-input" id="password_protect" name="password_protect" onclick="markRequired()">
-								<label class="form-check-label" for="password_protect">Password Protect ?</label>
+								<input type="checkbox" class="form-check-input" id="passwordProtect" name="passwordProtect" onclick="markRequired()">
+								<label class="form-check-label" for="passwordProtect">Password Protect ?</label>
 							</div>
 							<div class="form-group" id="password-containter-1" style="display: none">
 								<label for="url_password">Password</label>
@@ -40,7 +40,9 @@
 								<input class="form-check-input" name="show_password" type="checkbox" id="hide_password" onclick="showHidePassword()">
 								<label class="form-check-label" for="hide_password">Show Password</label>
 							</div>
-							<input type=submit value="Shorten" class="btn btn-primary">
+							<div class="form-group text-center">
+								<input type=submit value="Shorten" class="btn btn-primary btn-block">
+							</div>
 							{{ if .error }}
 							<div class=".text-danger">
 								{{.error}}
@@ -65,7 +67,7 @@
 		function markRequired() {
 			let div1 = document.getElementById("password-containter-1");
 			let div2 = document.getElementById("password-containter-2");
-			let checkBox = document.getElementById("password_protect");
+			let checkBox = document.getElementById("passwordProtect");
 			let input = document.getElementById("url_password");
 			if (checkBox.checked) {
 				div1.style.display = "block";

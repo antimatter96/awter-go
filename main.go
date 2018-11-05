@@ -32,8 +32,8 @@ func main() {
 
 	router.GET("/short", handlers.Wrapper(handlers.ShortnerGet))
 	router.POST("/short", handlers.Wrapper(handlers.ShortnerPost))
-	router.POST("/i/", handlers.Wrapper(handlers.ShortnerPost))
-	router.POST("/i/:id", handlers.Wrapper(handlers.ShortnerPost))
+
+	router.POST("/i/:id", handlers.Wrapper(handlers.ElongatePost))
 	router.GET("/i/:id", handlers.Wrapper(handlers.ElongateGet))
 
 	// router.POST("/aws", handlers.Wrapper(handlers.ExtractSessionID(handlers.NewLoginHandlerPost)))
