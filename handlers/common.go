@@ -23,6 +23,7 @@ var (
 	constErrEmailTaken          string = "Email Taken"
 	constErrURLMissing          string = "URL Missing"
 	constErrPasswordTooShort    string = "Password too short"
+	constErrURLNotPresent       string = "URL not present"
 )
 
 var letterRunes = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")

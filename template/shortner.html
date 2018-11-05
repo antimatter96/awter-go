@@ -1,55 +1,83 @@
 <!doctype html>
 <html>
-	<head>
-		<title>Home</title>
-		<link rel="stylesheet" type="text/css" href="static/custom.css">
-	</head>
-	<body>
-		
-		<nav>
-			<h3>
-				Otter
-			</h3>
-			<div id="nav-links">
-				<a href="/login">Login<a/>
-				<a href="/register">Signup<a/>
+
+<head>
+	<title>Home</title>
+	<link rel="stylesheet" type="text/css" href="static/bootstrap.css">
+	<link rel="stylesheet" type="text/css" href="static/custom.css">
+</head>
+
+<body>
+
+	<div class="container">
+		<div class="row">
+			<div class="col-12 text-center my-3">
+				<h2>Otter</h2>
 			</div>
-		</nav>
-		<br>
-		<form action="short{{if .url_next }}?url_next={{.url_next}}{{end}}" method ="post">
-			<p>
-				<input name="url" type="url" required>
-			</p>
-			<p>
-        <label>Password protect<input id="password_protect" name="password_protect" type="checkbox" onclick="markRequired()"></label>
-				<input id="url_password" name="password" type="password">
-				<label>Show Password<input name="show_password" type="checkbox" onclick="showHidePassword()"></label>
-			</p>
-			<p>
-				{{ if .error }}
-					{{.error}}
-				{{end}}
-			</p>
-			<input type=submit value="Login">
-		</form>
-		<script>
-				function showHidePassword() {
-					let x = document.getElementById("url_password");
-					if (x.type === "password") {
-						 x.type = "text";
-					} else {
-						x.type = "password";
-					}
-				}
-				function markRequired() {
-					let checkBox = document.getElementById("password_protect");
-					let input = document.getElementById("url_password");
-					if (checkBox.checked) {
-						input.required = true;
-					} else {
-						input.required = false;
-					}
-				}
-			</script>
-	</body>
+		</div>
+	</div>
+
+	<div class="container">
+		<div class="row">
+			<div class="col-6 offset-3">
+				<div class="card border-primary mb-3">
+					<div class="card-body ">
+						<form action="short{{if .url_next }}?url_next={{.url_next}}{{end}}" method="post">
+							<div class="form-group">
+								<label for="inputURL">Link</label>
+								<input name="url" type="url" id="inputURL" class="form-control" required>
+								<small id="urlHELP" class="form-text text-muted">URLs should be include http</small>
+							</div>
+							<div class="form-group form-check">
+								<input type="checkbox" class="form-check-input" id="password_protect" name="password_protect" onclick="markRequired()">
+								<label class="form-check-label" for="password_protect">Password Protect ?</label>
+							</div>
+							<div class="form-group" id="password-containter-1" style="display: none">
+								<label for="url_password">Password</label>
+								<input name="password" type="password" id="url_password" class="form-control">
+							</div>
+							<div class="form-group form-check" id="password-containter-2" style="display: none">
+								<input class="form-check-input" name="show_password" type="checkbox" id="hide_password" onclick="showHidePassword()">
+								<label class="form-check-label" for="hide_password">Show Password</label>
+							</div>
+							<input type=submit value="Shorten" class="btn btn-primary">
+							{{ if .error }}
+							<div class=".text-danger">
+								{{.error}}
+							</div>
+							{{end}}
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		function showHidePassword() {
+			let x = document.getElementById("url_password");
+			if (x.type === "password") {
+				x.type = "text";
+			} else {
+				x.type = "password";
+			}
+		}
+
+		function markRequired() {
+			let div1 = document.getElementById("password-containter-1");
+			let div2 = document.getElementById("password-containter-2");
+			let checkBox = document.getElementById("password_protect");
+			let input = document.getElementById("url_password");
+			if (checkBox.checked) {
+				div1.style.display = "block";
+				div2.style.display = "block";
+				input.required = true;
+			} else {
+				div1.style.display = "none";
+				div2.style.display = "none";
+				input.required = false;
+			}
+		}
+	</script>
+</body>
+
 </html>
