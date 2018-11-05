@@ -1,48 +1,51 @@
 <!doctype html>
 <html>
-	<head>
-		<title>Home</title>
-		<link rel="stylesheet" type="text/css" href="static/custom.css">
-	</head>
-	<body>
-		
-		<nav>
-			<h3>
-				Name
-			</h3>
-			<div id="nav-links">
-				<a href="/login">Login<a/>
-				<a href="/register">Signup<a/>
+
+<head>
+	<title>Home</title>
+	<link rel="stylesheet" type="text/css" href="static/bootstrap.css">
+	<link rel="stylesheet" type="text/css" href="static/custom.css">
+</head>
+
+<body>
+
+	<div class="container">
+		<div class="row">
+			<div class="col-12 text-center my-3">
+				<h2>Otter</h2>
 			</div>
-		</nav>
-    <br>
-    {{ if .password_protect }}
-    <div>
-      <form>
-      <input id="url_password" value="{{ .password }}" type="password">
-      <input name="show_password" type="checkbox" onclick="showHidePassword()">
-      </form>
-    </div>
-    {{end}}
-			<p>
-				{{ if .error }}
-					{{.error}}
-				{{end}}
-			</p>
-    <script>
-      function showHidePassword() {
-        let x = document.getElementById("url_password");
-        if (x.type === "password") {
-           x.type = "text";
-        } else {
-          x.type = "password";
-        }
-      }
-      function init() {
-        var shortURL = "{{ .shortURL }}"
-        window.history.pushState(null, 'Created', `/i/${shortURL}`);
-      }
-      window.addEventListener('load', init);
-    </script>
-	</body>
+		</div>
+	</div>
+	<br>
+	{{ if .password_protect }}
+	<div>
+		<form>
+			<input id="url_password" value="{{ .password }}" type="password">
+			<input name="show_password" type="checkbox" onclick="showHidePassword()">
+		</form>
+	</div>
+	{{end}}
+	<p>
+		{{ if .error }}
+		{{.error}}
+		{{end}}
+	</p>
+	<script>
+		function showHidePassword() {
+			let x = document.getElementById("url_password");
+			if (x.type === "password") {
+				x.type = "text";
+			} else {
+				x.type = "password";
+			}
+		}
+
+		function init() {
+			var shortURL = "{{ .shortURL }}"
+			window.history.pushState(null, 'Created', `/i/${shortURL}`);
+		}
+		window.addEventListener('load', init);
+	</script>
+</body>
+
 </html>

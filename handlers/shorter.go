@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"html/template"
 	simplerand "math/rand"
 	"net/http"
 	"time"
@@ -16,6 +17,8 @@ import (
 
 // NewLoginHandlerGet is userd asd
 func ShortnerGet(ctx context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	shortnerTemplate = template.Must(template.ParseFiles("./template/shortner.html"))
+	createdTemplate = template.Must(template.ParseFiles("./template/created.html"))
 	r.ParseForm()
 	var urlNext string
 	if len(r.Form["url_next"]) > 0 {
