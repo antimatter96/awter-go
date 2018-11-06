@@ -31,7 +31,7 @@ func Init() {
 }
 
 func NewURLInterface() URLService {
-	urlService := urls{db: db}
+	urlService := urlsDb{db: db}
 	err := urlService.Init()
 	if err != nil {
 		panic(err.Error())
