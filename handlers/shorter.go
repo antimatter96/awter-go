@@ -14,8 +14,6 @@ import (
 	"net/http"
 	"time"
 
-	"golang.org/x/crypto/argon2"
-
 	"github.com/asaskevich/govalidator"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/crypto/bcrypt"
@@ -88,7 +86,6 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 	}
 
 	var hashedPassword string
-	var salt string
 	var toStoreURL string = url
 	if passwordProtect {
 		hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
@@ -100,20 +97,11 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 		}
 		hashedPassword = string(hashed)
 
-		salt, err = getSalt(8)
-		if err != nil {
-			shortnerTemplate.Execute(w, map[string]interface{}{
-				"error": constErrInternalError,
-			})
-			return
-		}
-		fmt.Println(salt)
-		fmt.Println([]byte(salt))
-
-		ek := argon2.IDKey([]byte(password), []byte(salt), 1, 64*1024, 4, 32)
-		fmt.Println("KEY", ek)
+		ek := hashed[28:]
+		fmt.Println("KEY", len(ek), "\n", hashed, "\n", ek)
 		final, err := encrypt([]byte(url), ek)
 		if err != nil {
+			fmt.Println(err)
 			shortnerTemplate.Execute(w, map[string]interface{}{
 				"error": constErrInternalError,
 			})
@@ -124,7 +112,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 		toStoreURL = string(final)
 	}
 
-	err = urlService.CreatePassword(shortURL, toStoreURL, hashedPassword, salt)
+	err = urlService.CreatePassword(shortURL, toStoreURL, hashedPassword)
 	if err != nil {
 		shortnerTemplate.Execute(w, map[string]interface{}{
 			"error": constErrInternalError,
@@ -145,7 +133,7 @@ func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, ps
 	elongateTemplate = template.Must(template.ParseFiles("./template/elongate.html"))
 	shortURL := ps.ByName("id")
 
-	present, longURL, password, _, err := urlService.GetLong(shortURL)
+	present, longURL, password, err := urlService.GetLong(shortURL)
 	if err != nil {
 		elongateTemplate.Execute(w, map[string]interface{}{
 			"error": constErrInternalError,
@@ -183,7 +171,7 @@ func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, p
 	elongateTemplate = template.Must(template.ParseFiles("./template/elongate.html"))
 	shortURL := ps.ByName("id")
 
-	present, longURL, password, storedSalt, err := urlService.GetLong(shortURL)
+	present, longURL, storedHash, err := urlService.GetLong(shortURL)
 	if err != nil {
 		elongateTemplate.Execute(w, map[string]interface{}{
 			"error": constErrInternalError,
@@ -196,7 +184,7 @@ func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, p
 		})
 		return
 	}
-	if password == "" {
+	if storedHash == "" {
 		http.Redirect(w, r, longURL, http.StatusSeeOther)
 		return
 	}
@@ -209,7 +197,7 @@ func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, p
 		})
 		return
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(password), []byte(user_password))
+	err = bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(user_password))
 	if err != nil {
 		elongateTemplate.Execute(w, map[string]interface{}{
 			"shortURL":        shortURL,
@@ -218,46 +206,33 @@ func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, p
 		})
 		return
 	}
-	if storedSalt != "" {
-		salt, err := base64.URLEncoding.DecodeString(storedSalt)
-		if err != nil {
-			elongateTemplate.Execute(w, map[string]interface{}{
-				"shortURL":        shortURL,
-				"error":           constErrInternalError,
-				"passwordProtect": true,
-			})
-			return
-		}
-		fmt.Println("D SALT", salt)
-		fmt.Println("D SALT DTRIG", string(salt))
-		dk := argon2.IDKey([]byte(password), salt, 1, 64*1024, 4, 32)
-		fmt.Println("KEY", dk)
-		longURLBytes, err := base64.URLEncoding.DecodeString(longURL)
-		if err != nil {
-			fmt.Println("Decoding of longURL", err)
-			elongateTemplate.Execute(w, map[string]interface{}{
-				"shortURL":        shortURL,
-				"error":           constErrInternalError,
-				"passwordProtect": true,
-			})
-			return
-		}
-		fmt.Println("D longurl bytes", longURLBytes)
-		fmt.Println("D longurl", string(longURLBytes))
-		//fmt.Println(longURLBytes)
-		final, err := decrypt(longURLBytes, dk)
-		if err != nil {
-			fmt.Println("Decryption", err)
-			elongateTemplate.Execute(w, map[string]interface{}{
-				"shortURL":        shortURL,
-				"error":           constErrInternalError,
-				"passwordProtect": true,
-			})
-			return
-		}
-		longURL = string(final)
-		//fmt.Println(string(final))
+
+	dk := []byte(storedHash)[28:]
+	fmt.Println("KEY", dk)
+	longURLBytes, err := base64.URLEncoding.DecodeString(longURL)
+	if err != nil {
+		fmt.Println("Decoding of longURL", err)
+		elongateTemplate.Execute(w, map[string]interface{}{
+			"shortURL":        shortURL,
+			"error":           constErrInternalError,
+			"passwordProtect": true,
+		})
+		return
 	}
+	fmt.Println("D longurl bytes", longURLBytes)
+	fmt.Println("D longurl", string(longURLBytes))
+	//fmt.Println(longURLBytes)
+	final, err := decrypt(longURLBytes, dk)
+	if err != nil {
+		fmt.Println("Decryption", err)
+		elongateTemplate.Execute(w, map[string]interface{}{
+			"shortURL":        shortURL,
+			"error":           constErrInternalError,
+			"passwordProtect": true,
+		})
+		return
+	}
+	longURL = string(final)
 	http.Redirect(w, r, longURL, http.StatusSeeOther)
 }
 

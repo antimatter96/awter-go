@@ -14,8 +14,8 @@ type URLService interface {
 	//Init() error
 
 	CreateNoPassword(string, string) error
-	CreatePassword(string, string, string, string) error
-	GetLong(string) (bool, string, string, string, error)
+	CreatePassword(string, string, string) error
+	GetLong(string) (bool, string, string, error)
 	PresentShort(string) (bool, error)
 }
 
@@ -41,12 +41,12 @@ func (u *urlsDb) Init() error {
 		return prepareStatementError
 	}
 
-	u.createPassword, prepareStatementError = u.db.Prepare("insert into `short_urls` (`short`,`long`, `password`, `salt`) values (?,?,?,?)")
+	u.createPassword, prepareStatementError = u.db.Prepare("insert into `short_urls` (`short`,`long`, `password`) values (?,?,?)")
 	if prepareStatementError != nil {
 		return prepareStatementError
 	}
 
-	u.getLong, prepareStatementError = u.db.Prepare("select `long`,`password`, `salt` from `short_urls` where `short` = ?")
+	u.getLong, prepareStatementError = u.db.Prepare("select `long`,`password` from `short_urls` where `short` = ?")
 	if prepareStatementError != nil {
 		return prepareStatementError
 	}
@@ -63,11 +63,9 @@ func (u *urlsDb) CreateNoPassword(short, long string) error {
 	return nil
 }
 
-func (u *urlsDb) CreatePassword(short, long, password, salt string) error {
-	salt = base64.URLEncoding.EncodeToString([]byte(salt))
+func (u *urlsDb) CreatePassword(short, long, password string) error {
 	long = base64.URLEncoding.EncodeToString([]byte(long))
-	fmt.Println(salt)
-	_, err := u.createPassword.Exec(short, long, password, salt)
+	_, err := u.createPassword.Exec(short, long, password)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -75,18 +73,17 @@ func (u *urlsDb) CreatePassword(short, long, password, salt string) error {
 	return nil
 }
 
-func (u *urlsDb) GetLong(short string) (bool, string, string, string, error) {
+func (u *urlsDb) GetLong(short string) (bool, string, string, error) {
 	var longURL string
 	var password string
-	var salt string
-	err := u.getLong.QueryRow(short).Scan(&longURL, &password, &salt)
+	err := u.getLong.QueryRow(short).Scan(&longURL, &password)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return false, "", "", "", nil
+			return false, "", "", nil
 		}
-		return false, "", "", "", err
+		return false, "", "", err
 	}
-	return true, longURL, password, salt, nil
+	return true, longURL, password, nil
 }
 
 func (u *urlsDb) PresentShort(short string) (bool, error) {
