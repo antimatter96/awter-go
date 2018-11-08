@@ -25,7 +25,7 @@ func main() {
 	}
 
 	cache.Init()
-	db.InitRedis()
+	db.Init()
 	handlers.Init()
 
 	router := httprouter.New()

@@ -35,7 +35,7 @@ func Init() {
 	initCookie()
 	parseTemplates()
 
-	urlService = db.NewURLInterfaceRedis()
+	urlService = db.NewURLInterface()
 
 	bcryptCost = int(constants.Value("bcrypt-cost").(float64))
 	if bcryptCost > 31 {
@@ -50,7 +50,17 @@ func generateRandomString(length int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return base64.URLEncoding.EncodeToString(x), err
+	return base64.URLEncoding.EncodeToString(x), nil
+}
+
+func getSalt(length int) (string, error) {
+	x := make([]byte, length)
+	_, err := rand.Read(x)
+
+	if err != nil {
+		return "", err
+	}
+	return string(x), nil
 }
 
 var bcryptCost int

@@ -24,7 +24,7 @@ func (u *urlsRedis) CreateNoPassword(short, long string) error {
 	return nil
 }
 
-func (u *urlsRedis) CreatePassword(short, long, password string) error {
+func (u *urlsRedis) CreatePassword(short, long, password, salt string) error {
 
 	conn := u.pool.Get()
 	defer conn.Close()
@@ -37,6 +37,7 @@ func (u *urlsRedis) CreatePassword(short, long, password string) error {
 	conn.Send("MULTI")
 	conn.Send("HSET", short, "long", long)
 	conn.Send("HSET", short, "pwd", password)
+	conn.Send("HSET", short, "salt", salt)
 
 	_, errRedis := conn.Do("EXEC")
 	if errRedis != nil {
@@ -45,26 +46,28 @@ func (u *urlsRedis) CreatePassword(short, long, password string) error {
 	return nil
 }
 
-func (u *urlsRedis) GetLong(short string) (bool, string, string, error) {
+func (u *urlsRedis) GetLong(short string) (bool, string, string, string, error) {
 
 	conn := u.pool.Get()
 	defer conn.Close()
 
 	_, errPingRedis := conn.Do("PING")
 	if errPingRedis != nil {
-		return false, "", "", errPingRedis
+		return false, "", "", "", errPingRedis
 	}
 
 	conn.Send("MULTI")
 	conn.Send("HGET", short, "long")
 	conn.Send("HGET", short, "pwd")
+	conn.Send("HGET", short, "salt")
+
 	resRedis, errGetRedis := redis.Strings(conn.Do("EXEC"))
 	if errGetRedis != nil {
 		//fmt.Println("REDIS GET error", errGetRedis)
-		return false, "", "-", errGetRedis
+		return false, "", "", "-", errGetRedis
 	}
 
-	return true, resRedis[0], resRedis[1], nil
+	return true, resRedis[0], resRedis[1], resRedis[2], nil
 }
 
 func (u *urlsRedis) PresentShort(short string) (bool, error) {
