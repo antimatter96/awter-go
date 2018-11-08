@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	simplerand "math/rand"
 	"net/http"
@@ -19,15 +18,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// NewLoginHandlerGet is userd asd
+// ShortnerGet is userd asd
 func ShortnerGet(ctx context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	shortnerTemplate = template.Must(template.ParseFiles("./template/shortner.html"))
 	shortnerTemplate.Execute(w, nil)
 }
 
-// NewLoginHandlerPost us
+// ShortnerPost us
 func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	createdTemplate = template.Must(template.ParseFiles("./template/created.html"))
 	errParseForm := r.ParseForm()
 
 	if errParseForm != nil {
@@ -98,7 +95,6 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 		hashedPassword = string(hashed)
 
 		ek := hashed[28:]
-		fmt.Println("KEY", len(ek), "\n", hashed, "\n", ek)
 		final, err := encrypt([]byte(url), ek)
 		if err != nil {
 			fmt.Println(err)
@@ -107,8 +103,6 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 			})
 			return
 		}
-		fmt.Println(final)
-		fmt.Println(string(final))
 		toStoreURL = string(final)
 	}
 
@@ -129,9 +123,8 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 
 }
 
-func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	elongateTemplate = template.Must(template.ParseFiles("./template/elongate.html"))
-	shortURL := ps.ByName("id")
+func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, pathParams httprouter.Params) {
+	shortURL := pathParams.ByName("id")
 
 	present, longURL, password, err := urlService.GetLong(shortURL)
 	if err != nil {
@@ -157,7 +150,7 @@ func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, ps
 	http.Redirect(w, r, longURL, http.StatusSeeOther)
 }
 
-func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, pathParams httprouter.Params) {
 	errParseForm := r.ParseForm()
 
 	if errParseForm != nil {
@@ -168,8 +161,7 @@ func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, p
 		return
 	}
 
-	elongateTemplate = template.Must(template.ParseFiles("./template/elongate.html"))
-	shortURL := ps.ByName("id")
+	shortURL := pathParams.ByName("id")
 
 	present, longURL, storedHash, err := urlService.GetLong(shortURL)
 	if err != nil {
@@ -208,10 +200,9 @@ func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, p
 	}
 
 	dk := []byte(storedHash)[28:]
-	fmt.Println("KEY", dk)
 	longURLBytes, err := base64.URLEncoding.DecodeString(longURL)
 	if err != nil {
-		fmt.Println("Decoding of longURL", err)
+		fmt.Println("Decoding of longURL ERR", err)
 		elongateTemplate.Execute(w, map[string]interface{}{
 			"shortURL":        shortURL,
 			"error":           constErrInternalError,
@@ -219,12 +210,9 @@ func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, p
 		})
 		return
 	}
-	fmt.Println("D longurl bytes", longURLBytes)
-	fmt.Println("D longurl", string(longURLBytes))
-	//fmt.Println(longURLBytes)
 	final, err := decrypt(longURLBytes, dk)
 	if err != nil {
-		fmt.Println("Decryption", err)
+		fmt.Println("Decryption ERR", err)
 		elongateTemplate.Execute(w, map[string]interface{}{
 			"shortURL":        shortURL,
 			"error":           constErrInternalError,
@@ -251,13 +239,6 @@ func generateRandomString2(length int) (string, error) {
 		arr[i] = letterRunes[simplerand.Intn(len(letterRunes))]
 	}
 	return string(arr), nil
-}
-
-func sendInternalServerError(template *template.Template, w http.ResponseWriter) {
-	template.Execute(w, map[string]interface{}{
-		"error": constErrInternalError,
-	})
-	return
 }
 
 func encrypt(plaintext []byte, key []byte) (ciphertext []byte, err error) {
