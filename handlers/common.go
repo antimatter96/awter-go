@@ -35,7 +35,7 @@ func Init() {
 	initCookie()
 	parseTemplates()
 
-	urlService = db.NewURLInterface()
+	urlService = db.NewURLInterfaceRedis()
 
 	bcryptCost = int(constants.Value("bcrypt-cost").(float64))
 	if bcryptCost > 31 {

@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -16,6 +17,8 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/julienschmidt/httprouter"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/crypto/nacl/secretbox"
+	"golang.org/x/crypto/scrypt"
 )
 
 // ShortnerGet is userd asd
@@ -58,6 +61,8 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 			"url_next": urlNext,
 		})
 		return
+	} else if !passwordProtect {
+		password = "default"
 	}
 
 	var shortURL string
@@ -84,29 +89,38 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 
 	var hashedPassword string
 	var toStoreURL string = url
-	if passwordProtect {
-		hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
-		if err != nil {
-			shortnerTemplate.Execute(w, map[string]interface{}{
-				"error": constErrInternalError,
-			})
-			return
-		}
-		hashedPassword = string(hashed)
 
-		ek := hashed[28:]
-		final, err := encrypt([]byte(url), ek)
-		if err != nil {
-			fmt.Println(err)
-			shortnerTemplate.Execute(w, map[string]interface{}{
-				"error": constErrInternalError,
-			})
-			return
-		}
-		toStoreURL = string(final)
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
+	if err != nil {
+		shortnerTemplate.Execute(w, map[string]interface{}{
+			"error": constErrInternalError,
+		})
+		return
+	}
+	hashedPassword = string(hashed)
+
+	ek := hashed[28:]
+	final, err := encrypt([]byte(url), ek)
+	if err != nil {
+		fmt.Println(err)
+		shortnerTemplate.Execute(w, map[string]interface{}{
+			"error": constErrInternalError,
+		})
+		return
+	}
+	toStoreURL = string(final)
+
+	x, y, z, e := encryptNew(password, url)
+	fmt.Println(x, "\n", y, "\n", z, e)
+
+	x1, e2 := decryptNew(password, z, x, y)
+	fmt.Println(x1, "\n", e2)
+
+	qq := urlService.CreateNew(shortURL, x, y, z, hashedPassword)
+	if qq != nil {
 	}
 
-	err = urlService.CreatePassword(shortURL, toStoreURL, hashedPassword)
+	err = urlService.CreatePassword(shortURL, hex.EncodeToString([]byte(toStoreURL)), hashedPassword)
 	if err != nil {
 		shortnerTemplate.Execute(w, map[string]interface{}{
 			"error": constErrInternalError,
@@ -281,4 +295,93 @@ func decrypt(ciphertext []byte, key []byte) (plaintext []byte, err error) {
 		ciphertext[gcm.NonceSize():],
 		nil,
 	)
+}
+
+func encryptNew(password, data string) (nonceToSave, saltToSave, encryptedToSave string, err error) {
+	defer func() {
+		if errRecovered := recover(); errRecovered != nil {
+			if value, isError := errRecovered.(error); isError {
+				nonceToSave = ""
+				saltToSave = ""
+				encryptedToSave = ""
+				fmt.Println("Error", value)
+			}
+		}
+	}()
+	pwdBuff := []byte(password)
+
+	nonce := make([]byte, 24)
+	if _, err := rand.Read(nonce); err != nil {
+		panic(err)
+	}
+
+	var secretKeyLimited [24]byte
+	copy(secretKeyLimited[:], nonce)
+
+	salt := make([]byte, 12)
+	if _, err := rand.Read(salt); err != nil {
+		panic(err)
+	}
+
+	ek, err := scrypt.Key(pwdBuff, salt, 16384, 8, 1, 32)
+	if err != nil {
+		panic(err)
+	}
+
+	var ekLimited [32]byte
+	copy(ekLimited[:], ek)
+
+	encrypted := secretbox.Seal(nil, []byte(data), &secretKeyLimited, &ekLimited)
+
+	nonceToSave = hex.EncodeToString(nonce)
+	saltToSave = hex.EncodeToString(salt)
+	encryptedToSave = hex.EncodeToString(encrypted)
+
+	return
+}
+
+func decryptNew(password, data, nonceString, saltString string) (long string, err error) {
+	defer func() {
+		if errRecovered := recover(); errRecovered != nil {
+			if value, isError := errRecovered.(error); isError {
+				long = ""
+				fmt.Println("Error", value)
+			}
+		}
+	}()
+	pwdBuff := []byte(password)
+
+	nonceBytes, err := hex.DecodeString(nonceString)
+	if err != nil {
+		panic(err)
+	}
+	var secretKeyLimited [24]byte
+	copy(secretKeyLimited[:], nonceBytes)
+
+	saltBytes, err := hex.DecodeString(saltString)
+	if err != nil {
+		panic(err)
+	}
+
+	dk, err := scrypt.Key(pwdBuff, saltBytes, 16384, 8, 1, 32)
+	if err != nil {
+		panic(err)
+	}
+
+	var dkLimited [32]byte
+	copy(dkLimited[:], dk)
+
+	encBytes, err := hex.DecodeString(data)
+
+	if err != nil {
+		panic(err)
+	}
+
+	decrypted, ok := secretbox.Open(nil, []byte(encBytes), &secretKeyLimited, &dkLimited)
+	if !ok {
+		err = fmt.Errorf("Cant decode")
+		panic(err)
+	}
+	long = string(decrypted)
+	return
 }

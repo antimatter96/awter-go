@@ -86,3 +86,45 @@ func (u *urlsRedis) PresentShort(short string) (bool, error) {
 	}
 	return true, nil
 }
+
+func (u *urlsRedis) GetLong2(short string) (bool, map[string]string, error) {
+
+	conn := u.pool.Get()
+	defer conn.Close()
+
+	_, errPingRedis := conn.Do("PING")
+	if errPingRedis != nil {
+		return false, nil, errPingRedis
+	}
+
+	resRedis, errGetRedis := redis.StringMap(conn.Do("HGETALL" + short))
+	if errGetRedis != nil {
+		//fmt.Println("REDIS GET error", errGetRedis)
+		return false, nil, errGetRedis
+	}
+
+	return true, resRedis, nil
+}
+
+func (u *urlsRedis) CreateNew(short, nonce, salt, encrypted, passwordHash string) error {
+	conn := u.pool.Get()
+	defer conn.Close()
+
+	_, errPingRedis := conn.Do("PING")
+	if errPingRedis != nil {
+		return errPingRedis
+	}
+
+	short += "_new"
+	conn.Send("MULTI")
+	conn.Send("HSET", short, "encrypted", encrypted)
+	conn.Send("HSET", short, "salt", salt)
+	conn.Send("HSET", short, "nonce", nonce)
+	conn.Send("HSET", short, "passwordHash", passwordHash)
+
+	_, errRedis := conn.Do("EXEC")
+	if errRedis != nil {
+		return errRedis
+	}
+	return nil
+}

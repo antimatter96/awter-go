@@ -15,6 +15,7 @@ type URLService interface {
 
 	CreateNoPassword(string, string) error
 	CreatePassword(string, string, string) error
+	CreateNew(string, string, string, string, string) error
 	GetLong(string) (bool, string, string, error)
 	PresentShort(string) (bool, error)
 }
@@ -96,4 +97,8 @@ func (u *urlsDb) PresentShort(short string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (u *urlsDb) CreateNew(short, nonce, salt, encrypted, passwordHash string) error {
+	return nil
 }
