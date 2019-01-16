@@ -14,13 +14,13 @@ import (
 
 var pool *redis.Pool
 
+// InitRedis is used to initialize the redis connections
 func InitRedis() {
 	x := constants.Value("redisAddress").(string)
 	pool = newPool(x)
 }
 
-// The main db object
-
+// NewURLInterfaceRedis returns a URLService interface, using redis as backend
 func NewURLInterfaceRedis() URLService {
 	urlService := urlsRedis{pool: pool}
 	err := urlService.Init()

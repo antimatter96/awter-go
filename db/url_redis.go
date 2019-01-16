@@ -20,54 +20,6 @@ func (u *urlsRedis) Init() error {
 	return nil
 }
 
-func (u *urlsRedis) CreateNoPassword(short, long string) error {
-	return nil
-}
-
-func (u *urlsRedis) CreatePassword(short, long, password string) error {
-
-	conn := u.pool.Get()
-	defer conn.Close()
-
-	_, errPingRedis := conn.Do("PING")
-	if errPingRedis != nil {
-		return errPingRedis
-	}
-
-	conn.Send("MULTI")
-	conn.Send("HSET", short, "long", long)
-	conn.Send("HSET", short, "pwd", password)
-
-	_, errRedis := conn.Do("EXEC")
-	if errRedis != nil {
-		return errRedis
-	}
-	return nil
-}
-
-func (u *urlsRedis) GetLong(short string) (bool, string, string, error) {
-
-	conn := u.pool.Get()
-	defer conn.Close()
-
-	_, errPingRedis := conn.Do("PING")
-	if errPingRedis != nil {
-		return false, "", "", errPingRedis
-	}
-
-	conn.Send("MULTI")
-	conn.Send("HGET", short, "long")
-	conn.Send("HGET", short, "pwd")
-
-	resRedis, errGetRedis := redis.Strings(conn.Do("EXEC"))
-	if errGetRedis != nil {
-		//fmt.Println("REDIS GET error", errGetRedis)
-		return false, "", "", errGetRedis
-	}
-
-	return true, resRedis[0], resRedis[1], nil
-}
-
 func (u *urlsRedis) PresentShort(short string) (bool, error) {
 	conn := u.pool.Get()
 	defer conn.Close()
@@ -87,26 +39,26 @@ func (u *urlsRedis) PresentShort(short string) (bool, error) {
 	return true, nil
 }
 
-func (u *urlsRedis) GetLong2(short string) (bool, map[string]string, error) {
+func (u *urlsRedis) GetLong(short string) (map[string]string, error) {
 
 	conn := u.pool.Get()
 	defer conn.Close()
 
 	_, errPingRedis := conn.Do("PING")
 	if errPingRedis != nil {
-		return false, nil, errPingRedis
+		return nil, errPingRedis
 	}
 
-	resRedis, errGetRedis := redis.StringMap(conn.Do("HGETALL" + short))
+	resRedis, errGetRedis := redis.StringMap(conn.Do("HGETALL", short))
 	if errGetRedis != nil {
 		//fmt.Println("REDIS GET error", errGetRedis)
-		return false, nil, errGetRedis
+		return nil, errGetRedis
 	}
 
-	return true, resRedis, nil
+	return resRedis, nil
 }
 
-func (u *urlsRedis) CreateNew(short, nonce, salt, encrypted, passwordHash string) error {
+func (u *urlsRedis) Create(short, nonce, salt, encrypted, passwordHash string) error {
 	conn := u.pool.Get()
 	defer conn.Close()
 
@@ -115,7 +67,6 @@ func (u *urlsRedis) CreateNew(short, nonce, salt, encrypted, passwordHash string
 		return errPingRedis
 	}
 
-	short += "_new"
 	conn.Send("MULTI")
 	conn.Send("HSET", short, "encrypted", encrypted)
 	conn.Send("HSET", short, "salt", salt)

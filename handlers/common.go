@@ -14,7 +14,7 @@ import (
 )
 
 // All the different errors
-var (
+const (
 	constErrEmailMissing        string = "Email Not Present"
 	constErrPasswordMissing     string = "Password Not Present"
 	constErrNotRegistered       string = "No records found"
