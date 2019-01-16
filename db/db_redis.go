@@ -8,6 +8,7 @@ import (
 
 	redis "github.com/gomodule/redigo/redis"
 
+	url "./url"
 	// This exposes mysql connector
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -21,8 +22,8 @@ func InitRedis() {
 }
 
 // NewURLInterfaceRedis returns a URLService interface, using redis as backend
-func NewURLInterfaceRedis() URLService {
-	urlService := urlsRedis{pool: pool}
+func NewURLInterfaceRedis() url.URLService {
+	urlService := url.UrlsRedis{Pool: pool}
 	err := urlService.Init()
 	if err != nil {
 		panic(err.Error())

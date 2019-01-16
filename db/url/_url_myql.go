@@ -1,4 +1,4 @@
-package db
+package url
 
 import (
 	"database/sql"
@@ -9,7 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type urlsDb struct {
+type UrlsDb struct {
 	createNoPassword *sql.Stmt
 	createPassword   *sql.Stmt
 	getLong          *sql.Stmt
@@ -18,7 +18,7 @@ type urlsDb struct {
 }
 
 // Init creates all the prepared statements
-func (u *urlsDb) Init() error {
+func (u *UrlsDb) Init() error {
 	var prepareStatementError error
 
 	u.checkShort, prepareStatementError = u.db.Prepare("select `id` from `short_urls` where `short` = ?")
@@ -44,7 +44,7 @@ func (u *urlsDb) Init() error {
 	return nil
 }
 
-func (u *urlsDb) CreateNoPassword(short, long string) error {
+func (u *UrlsDb) CreateNoPassword(short, long string) error {
 	_, err := u.createNoPassword.Exec(short, long)
 	if err != nil {
 		fmt.Println(err)
@@ -53,7 +53,7 @@ func (u *urlsDb) CreateNoPassword(short, long string) error {
 	return nil
 }
 
-func (u *urlsDb) CreatePassword(short, long, password string) error {
+func (u *UrlsDb) CreatePassword(short, long, password string) error {
 	long = base64.URLEncoding.EncodeToString([]byte(long))
 	_, err := u.createPassword.Exec(short, long, password)
 	if err != nil {
@@ -63,7 +63,7 @@ func (u *urlsDb) CreatePassword(short, long, password string) error {
 	return nil
 }
 
-func (u *urlsDb) GetLong(short string) (bool, string, string, error) {
+func (u *UrlsDb) GetLong(short string) (bool, string, string, error) {
 	var longURL string
 	var password string
 	err := u.getLong.QueryRow(short).Scan(&longURL, &password)
@@ -76,7 +76,7 @@ func (u *urlsDb) GetLong(short string) (bool, string, string, error) {
 	return true, longURL, password, nil
 }
 
-func (u *urlsDb) PresentShort(short string) (bool, error) {
+func (u *UrlsDb) PresentShort(short string) (bool, error) {
 	var id int
 	err := u.checkShort.QueryRow(short).Scan(&id)
 	if err != nil {
@@ -88,6 +88,6 @@ func (u *urlsDb) PresentShort(short string) (bool, error) {
 	return true, nil
 }
 
-func (u *urlsDb) CreateNew(short, nonce, salt, encrypted, passwordHash string) error {
+func (u *UrlsDb) CreateNew(short, nonce, salt, encrypted, passwordHash string) error {
 	return nil
 }

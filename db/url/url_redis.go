@@ -1,4 +1,4 @@
-package db
+package url
 
 import (
 	redis "github.com/gomodule/redigo/redis"
@@ -11,17 +11,17 @@ import (
 // 	_ "github.com/go-sql-driver/mysql"
 // )
 
-type urlsRedis struct {
-	pool *redis.Pool
+type UrlsRedis struct {
+	Pool *redis.Pool
 }
 
 // Init creates all the prepared statements
-func (u *urlsRedis) Init() error {
+func (u *UrlsRedis) Init() error {
 	return nil
 }
 
-func (u *urlsRedis) PresentShort(short string) (bool, error) {
-	conn := u.pool.Get()
+func (u *UrlsRedis) PresentShort(short string) (bool, error) {
+	conn := u.Pool.Get()
 	defer conn.Close()
 
 	_, errPingRedis := conn.Do("PING")
@@ -39,9 +39,9 @@ func (u *urlsRedis) PresentShort(short string) (bool, error) {
 	return true, nil
 }
 
-func (u *urlsRedis) GetLong(short string) (map[string]string, error) {
+func (u *UrlsRedis) GetLong(short string) (map[string]string, error) {
 
-	conn := u.pool.Get()
+	conn := u.Pool.Get()
 	defer conn.Close()
 
 	_, errPingRedis := conn.Do("PING")
@@ -58,8 +58,8 @@ func (u *urlsRedis) GetLong(short string) (map[string]string, error) {
 	return resRedis, nil
 }
 
-func (u *urlsRedis) Create(short, nonce, salt, encrypted, passwordHash string) error {
-	conn := u.pool.Get()
+func (u *UrlsRedis) Create(short, nonce, salt, encrypted, passwordHash string) error {
+	conn := u.Pool.Get()
 	defer conn.Close()
 
 	_, errPingRedis := conn.Do("PING")

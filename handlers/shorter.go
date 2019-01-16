@@ -107,6 +107,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 
 }
 
+// ElongateGet is
 func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, pathParams httprouter.Params) {
 	shortURL := pathParams.ByName("id")
 
@@ -119,6 +120,7 @@ func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, pa
 	http.Redirect(w, r, longURL, http.StatusSeeOther)
 }
 
+// ElongatePost is
 func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, pathParams httprouter.Params) {
 	errParseForm := r.ParseForm()
 
@@ -157,11 +159,11 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 		}
 	}
 
+	fmt.Println(mp)
 	password := "default"
 	for i := 0; i < 2; i++ {
 		err = bcrypt.CompareHashAndPassword([]byte(mp["passwordHash"]), []byte(password))
 		if err != nil {
-			fmt.Printf("_%v_", err.Error())
 			if err == bcrypt.ErrMismatchedHashAndPassword {
 				userPassword := r.FormValue("password")
 				if i == 1 || userPassword == "" {
@@ -173,6 +175,7 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 				}
 				password = userPassword
 			} else {
+				fmt.Printf("_%v_\n", err.Error())
 				return "", map[string]interface{}{
 					"error": constErrInternalError,
 				}
@@ -180,7 +183,7 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 		}
 	}
 
-	longURL, err := decryptNew("default", mp["encrypted"], mp["nonce"], mp["salt"])
+	longURL, err := decryptNew(password, mp["encrypted"], mp["nonce"], mp["salt"])
 	if err != nil {
 		return "", map[string]interface{}{
 			"error": constErrInternalError,

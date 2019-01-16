@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"../constants"
+	url "./url"
 
 	// This exposes mysql connector
 	_ "github.com/go-sql-driver/mysql"
@@ -31,7 +32,7 @@ func Init() {
 }
 
 func NewURLInterface() URLService {
-	urlService := urlsDb{db: db}
+	urlService := url.UrlsDb{db: db}
 	err := urlService.Init()
 	if err != nil {
 		panic(err.Error())

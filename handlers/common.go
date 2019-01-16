@@ -10,6 +10,7 @@ import (
 	"../cache"
 	"../constants"
 	"../db"
+	"../db/url"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -28,7 +29,7 @@ const (
 
 var letterRunes = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-var urlService db.URLService
+var urlService url.URLService
 
 // Init is used to initialize all things
 func Init() {
@@ -73,8 +74,10 @@ var (
 	UserIDKey    key = 2
 )
 
+// HandlerWithContext is a custom request handler
 type HandlerWithContext func(context.Context, http.ResponseWriter, *http.Request, httprouter.Params)
 
+// Wrapper is used to
 func Wrapper(lead HandlerWithContext) httprouter.Handle {
 	ctx := context.Background()
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -91,14 +94,14 @@ func ExtractSessionID(next HandlerWithContext) HandlerWithContext {
 			err = cookie.Decode("sessionid", httpCookie.Value, &value)
 			if err == nil {
 				fmt.Println(value)
-				sessionId := value["sessionid"]
-				if sessionId != "" {
-					fmt.Println(sessionId)
-					userID, err := cache.GetSessionValue(sessionId, "userId")
+				sessionID := value["sessionid"]
+				if sessionID != "" {
+					fmt.Println(sessionID)
+					userID, err := cache.GetSessionValue(sessionID, "userId")
 					if err == nil {
 						ctx = context.WithValue(ctx, UserIDKey, &userID)
 					}
-					ctx = context.WithValue(ctx, SessionIDKey, &sessionId)
+					ctx = context.WithValue(ctx, SessionIDKey, &sessionID)
 				}
 			}
 		}
@@ -106,13 +109,14 @@ func ExtractSessionID(next HandlerWithContext) HandlerWithContext {
 	}
 }
 
+// MiddlewareAllowOnlyAuth allows only authorised users to access the resource
 func MiddlewareAllowOnlyAuth(next HandlerWithContext) HandlerWithContext {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		sessionId := ctx.Value(SessionIDKey).(string)
-		if sessionId == "" {
+		sessionID := ctx.Value(SessionIDKey).(string)
+		if sessionID == "" {
 			http.Redirect(w, r, "/login?url_next="+r.URL.String(), http.StatusSeeOther)
 		} else {
-			userID, err := cache.GetSessionValue(sessionId, "userId")
+			userID, err := cache.GetSessionValue(sessionID, "userId")
 			if err != nil {
 				http.Redirect(w, r, "/login?url_next="+r.URL.String(), http.StatusSeeOther)
 			} else {
