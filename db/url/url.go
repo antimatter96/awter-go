@@ -1,10 +1,5 @@
 package url
 
-import (
-	// M
-	_ "github.com/go-sql-driver/mysql"
-)
-
 // URLService is the
 type URLService interface {
 	//Init() error

@@ -15,8 +15,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func main() {
-
+func init() {
 	config := flag.String("config", "config", "config file")
 	flag.Parse()
 
@@ -27,17 +26,17 @@ func main() {
 	cache.Init()
 	db.InitRedis()
 	handlers.Init()
+}
+
+func main() {
 
 	router := httprouter.New()
 
-	router.GET("/short", handlers.Wrapper(handlers.ShortnerGet))
-	router.POST("/short", handlers.Wrapper(handlers.ShortnerPost))
+	router.GET("/short", handlers.Wrapper(handlers.ExtractSessionID(handlers.ShortnerGet)))
+	router.POST("/short", handlers.Wrapper(handlers.ExtractSessionID(handlers.ShortnerPost)))
 
-	router.POST("/i/:id", handlers.Wrapper(handlers.ElongatePost))
-	router.GET("/i/:id", handlers.Wrapper(handlers.ElongateGet))
-
-	// router.POST("/aws", handlers.Wrapper(handlers.ExtractSessionID(handlers.NewLoginHandlerPost)))
-	// router.GET("/as", handlers.Wrapper(handlers.ExtractSessionID(handlers.NewLoginHandlerGet)))
+	router.POST("/i/:id", handlers.Wrapper(handlers.ExtractSessionID(handlers.ElongatePost)))
+	router.GET("/i/:id", handlers.Wrapper(handlers.ExtractSessionID(handlers.ElongateGet)))
 
 	router.ServeFiles("/static/*filepath", http.Dir("./template/static/"))
 

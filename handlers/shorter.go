@@ -87,8 +87,13 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 	}
 	hashedPassword = string(hashed)
 
-	x, y, z, e := encryptNew(password, url)
-	fmt.Println(x, "\n", y, "\n", z, e)
+	x, y, z, err := encryptNew(password, url)
+	if err != nil {
+		shortnerTemplate.Execute(w, map[string]interface{}{
+			"error": constErrInternalError,
+		})
+		return
+	}
 
 	err = urlService.Create(shortURL, x, y, z, hashedPassword)
 	if err != nil {
@@ -159,7 +164,6 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 		}
 	}
 
-	fmt.Println(mp)
 	password := "default"
 	for i := 0; i < 2; i++ {
 		err = bcrypt.CompareHashAndPassword([]byte(mp["passwordHash"]), []byte(password))

@@ -6,8 +6,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"time"
 
-	"../cache"
 	"../constants"
 	"../db"
 	"../db/url"
@@ -27,9 +27,20 @@ const (
 	constErrURLNotPresent       string = "URL not present"
 )
 
+var bcryptCost int
+
+type key int
+
+// The constants for context
+const (
+	SessionIDKey key = 1
+	UserIDKey    key = 2
+)
+
 var letterRunes = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 var urlService url.URLService
+var oneHour time.Duration = 720 * time.Minute
 
 // Init is used to initialize all things
 func Init() {
@@ -64,16 +75,6 @@ func getSalt(length int) (string, error) {
 	return string(x), nil
 }
 
-var bcryptCost int
-
-type key int
-
-// The constants for context
-var (
-	SessionIDKey key = 1
-	UserIDKey    key = 2
-)
-
 // HandlerWithContext is a custom request handler
 type HandlerWithContext func(context.Context, http.ResponseWriter, *http.Request, httprouter.Params)
 
@@ -94,35 +95,26 @@ func ExtractSessionID(next HandlerWithContext) HandlerWithContext {
 			err = cookie.Decode("sessionid", httpCookie.Value, &value)
 			if err == nil {
 				fmt.Println(value)
-				sessionID := value["sessionid"]
-				if sessionID != "" {
-					fmt.Println(sessionID)
-					userID, err := cache.GetSessionValue(sessionID, "userId")
-					if err == nil {
-						ctx = context.WithValue(ctx, UserIDKey, &userID)
-					}
+				if sessionID := value["sessionid"]; sessionID != "" {
 					ctx = context.WithValue(ctx, SessionIDKey, &sessionID)
 				}
 			}
 		}
-		next(ctx, w, r, ps)
-	}
-}
 
-// MiddlewareAllowOnlyAuth allows only authorised users to access the resource
-func MiddlewareAllowOnlyAuth(next HandlerWithContext) HandlerWithContext {
-	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		sessionID := ctx.Value(SessionIDKey).(string)
-		if sessionID == "" {
-			http.Redirect(w, r, "/login?url_next="+r.URL.String(), http.StatusSeeOther)
-		} else {
-			userID, err := cache.GetSessionValue(sessionID, "userId")
-			if err != nil {
-				http.Redirect(w, r, "/login?url_next="+r.URL.String(), http.StatusSeeOther)
-			} else {
-				ctx = context.WithValue(ctx, UserIDKey, &userID)
-				next(ctx, w, r, ps)
+		if _, isString := ctx.Value(SessionIDKey).(string); !isString {
+			newSessionID, _ := generateRandomString(32)
+			encodedValue, err := cookie.Encode("sessionid", newSessionID)
+			if err == nil {
+				cookie := &http.Cookie{
+					Name:     "sessionid",
+					Value:    encodedValue,
+					Path:     "/",
+					HttpOnly: true,
+					Expires:  time.Now().Add(oneHour),
+				}
+				http.SetCookie(w, cookie)
 			}
 		}
+		next(ctx, w, r, ps)
 	}
 }
