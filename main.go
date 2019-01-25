@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
+
 	"./cache"
 	"./constants"
 	"./db"
 	"./handlers"
 
 	gorillaHandlers "github.com/gorilla/handlers"
-	"github.com/julienschmidt/httprouter"
 )
 
 func init() {
@@ -30,15 +31,11 @@ func init() {
 
 func main() {
 
-	router := httprouter.New()
+	handlers.Init()
+	mainRouter := mux.NewRouter()
+	mainRouter.Handle("/", handlers.ShortnerRouter())
 
-	router.GET("/short", handlers.Wrapper(handlers.ExtractSessionID(handlers.ShortnerGet)))
-	router.POST("/short", handlers.Wrapper(handlers.ExtractSessionID(handlers.ShortnerPost)))
-
-	router.POST("/i/:id", handlers.Wrapper(handlers.ExtractSessionID(handlers.ElongatePost)))
-	router.GET("/i/:id", handlers.Wrapper(handlers.ExtractSessionID(handlers.ElongateGet)))
-
-	router.ServeFiles("/static/*filepath", http.Dir("./template/static/"))
+	mainRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./template/static/"))))
 
 	output, _ := constants.Value("output").(string)
 
@@ -47,7 +44,7 @@ func main() {
 		fmt.Printf("could not create file %s : %v", output, err)
 	}
 
-	loggedRouter := gorillaHandlers.LoggingHandler(file, router)
+	loggedRouter := gorillaHandlers.LoggingHandler(file, mainRouter)
 
 	port, _ := constants.Value("port").(string)
 

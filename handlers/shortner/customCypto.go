@@ -1,4 +1,4 @@
-package handlers
+package shortner
 
 import (
 	"crypto/rand"
@@ -10,6 +10,8 @@ import (
 	"golang.org/x/crypto/nacl/secretbox"
 	"golang.org/x/crypto/scrypt"
 )
+
+var letterRunes = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 func generateRandomString2(length int) (string, error) {
 

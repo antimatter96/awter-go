@@ -1,28 +1,37 @@
-package handlers
+package shortner
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/julienschmidt/httprouter"
 	"golang.org/x/crypto/bcrypt"
+
+	"../../db"
+	"../../db/url"
+	. "../common"
 )
 
+var urlService url.URLService
+
+func InitShortner() {
+	urlService = db.NewURLInterfaceRedis()
+	parseTemplates()
+}
+
 // ShortnerGet is userd asd
-func ShortnerGet(ctx context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func ShortnerGet(w http.ResponseWriter, r *http.Request) {
 	shortnerTemplate.Execute(w, nil)
 }
 
 // ShortnerPost us
-func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func ShortnerPost(w http.ResponseWriter, r *http.Request) {
 	errParseForm := r.ParseForm()
 
 	if errParseForm != nil {
 		fmt.Println("parse error", errParseForm)
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error": constErrInternalError,
+			"error": ConstErrInternalError,
 		})
 		return
 	}
@@ -38,7 +47,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 
 	if url == "" || !govalidator.IsURL(url) {
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error":    constErrURLMissing,
+			"error":    ConstErrURLMissing,
 			"url_next": urlNext,
 		})
 		return
@@ -46,7 +55,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 
 	if passwordProtect && password == "" {
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error":    constErrPasswordMissing,
+			"error":    ConstErrPasswordMissing,
 			"url_next": urlNext,
 		})
 		return
@@ -60,14 +69,14 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 		shortURL, err = generateRandomString2(2)
 		if err != nil {
 			shortnerTemplate.Execute(w, map[string]interface{}{
-				"error": constErrInternalError,
+				"error": ConstErrInternalError,
 			})
 			return
 		}
 		present, err := urlService.PresentShort(shortURL)
 		if err != nil {
 			shortnerTemplate.Execute(w, map[string]interface{}{
-				"error": constErrInternalError,
+				"error": ConstErrInternalError,
 			})
 			return
 		}
@@ -78,10 +87,10 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 
 	var hashedPassword string
 
-	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), BcryptCost)
 	if err != nil {
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error": constErrInternalError,
+			"error": ConstErrInternalError,
 		})
 		return
 	}
@@ -90,7 +99,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 	x, y, z, err := encryptNew(password, url)
 	if err != nil {
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error": constErrInternalError,
+			"error": ConstErrInternalError,
 		})
 		return
 	}
@@ -98,7 +107,7 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 	err = urlService.Create(shortURL, x, y, z, hashedPassword)
 	if err != nil {
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error": constErrInternalError,
+			"error": ConstErrInternalError,
 		})
 		return
 	}
@@ -113,8 +122,8 @@ func ShortnerPost(ctx context.Context, w http.ResponseWriter, r *http.Request, _
 }
 
 // ElongateGet is
-func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, pathParams httprouter.Params) {
-	shortURL := pathParams.ByName("id")
+func ElongateGet(w http.ResponseWriter, r *http.Request) {
+	shortURL := "pathParams.ByName('id')"
 
 	longURL, renderParams := checkShorURLAndPassword(shortURL, r)
 	if longURL == "" {
@@ -126,18 +135,18 @@ func ElongateGet(ctx context.Context, w http.ResponseWriter, r *http.Request, pa
 }
 
 // ElongatePost is
-func ElongatePost(ctx context.Context, w http.ResponseWriter, r *http.Request, pathParams httprouter.Params) {
+func ElongatePost(w http.ResponseWriter, r *http.Request) {
 	errParseForm := r.ParseForm()
 
 	if errParseForm != nil {
 		fmt.Println("parse error", errParseForm)
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error": constErrInternalError,
+			"error": ConstErrInternalError,
 		})
 		return
 	}
 
-	shortURL := pathParams.ByName("id")
+	shortURL := "pathParams.ByName('id')"
 
 	longURL, renderParams := checkShorURLAndPassword(shortURL, r)
 	if longURL == "" {
@@ -154,13 +163,13 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 
 	if err != nil {
 		return "", map[string]interface{}{
-			"error": constErrInternalError,
+			"error": ConstErrInternalError,
 		}
 	}
 
 	if len(mp) == 0 {
 		return "", map[string]interface{}{
-			"error": constErrURLMissing,
+			"error": ConstErrURLMissing,
 		}
 	}
 
@@ -173,7 +182,7 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 				if i == 1 || userPassword == "" {
 					return "", map[string]interface{}{
 						"shortURL":        shortURL,
-						"error":           constErrPasswordMissing,
+						"error":           ConstErrPasswordMissing,
 						"passwordProtect": true,
 					}
 				}
@@ -181,7 +190,7 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 			} else {
 				fmt.Printf("_%v_\n", err.Error())
 				return "", map[string]interface{}{
-					"error": constErrInternalError,
+					"error": ConstErrInternalError,
 				}
 			}
 		}
@@ -190,7 +199,7 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 	longURL, err := decryptNew(password, mp["encrypted"], mp["nonce"], mp["salt"])
 	if err != nil {
 		return "", map[string]interface{}{
-			"error": constErrInternalError,
+			"error": ConstErrInternalError,
 		}
 	}
 

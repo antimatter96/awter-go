@@ -1,4 +1,4 @@
-package handlers
+package shortner
 
 import (
 	"html/template"

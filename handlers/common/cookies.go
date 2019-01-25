@@ -1,7 +1,7 @@
-package handlers
+package common
 
 import (
-	"../constants"
+	"../../constants"
 	"github.com/gorilla/securecookie"
 )
 
@@ -18,5 +18,4 @@ func initCookie() {
 
 	cookie = securecookie.New(hashKey, blockKey)
 	cookie.MaxAge(43200)
-
 }
