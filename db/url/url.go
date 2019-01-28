@@ -1,10 +1,10 @@
 package url
 
-// URLService is the
-type URLService interface {
-	//Init() error
+// Service is the
+type Service interface {
+	Init() error
 
 	Create(string, string, string, string, string) error
 	GetLong(string) (map[string]string, error)
-	PresentShort(string) (bool, error)
+	Present(string) (bool, error)
 }

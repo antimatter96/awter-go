@@ -4,23 +4,18 @@ import (
 	redis "github.com/gomodule/redigo/redis"
 )
 
-// import (
-// 	"database/sql"
-
-// 	// M
-// 	_ "github.com/go-sql-driver/mysql"
-// )
-
+// UrlsRedis is
 type UrlsRedis struct {
 	Pool *redis.Pool
 }
 
-// Init creates all the prepared statements
+// Init is an empty method,
 func (u *UrlsRedis) Init() error {
 	return nil
 }
 
-func (u *UrlsRedis) PresentShort(short string) (bool, error) {
+// Present checks the presence of given short URL
+func (u *UrlsRedis) Present(short string) (bool, error) {
 	conn := u.Pool.Get()
 	defer conn.Close()
 
@@ -39,6 +34,7 @@ func (u *UrlsRedis) PresentShort(short string) (bool, error) {
 	return true, nil
 }
 
+// GetLong returns all the info related to the given short URL
 func (u *UrlsRedis) GetLong(short string) (map[string]string, error) {
 
 	conn := u.Pool.Get()
@@ -58,6 +54,7 @@ func (u *UrlsRedis) GetLong(short string) (map[string]string, error) {
 	return resRedis, nil
 }
 
+// Create is used to create an entry in the datastore
 func (u *UrlsRedis) Create(short, nonce, salt, encrypted, passwordHash string) error {
 	conn := u.Pool.Get()
 	defer conn.Close()

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 
 	"../../db"
@@ -12,20 +13,20 @@ import (
 	. "../common"
 )
 
-var urlService url.URLService
+var urls url.Service
 
 func InitShortner() {
-	urlService = db.NewURLInterfaceRedis()
+	urls = db.NewURLInterfaceMySQL()
 	parseTemplates()
 }
 
 // ShortnerGet is userd asd
-func ShortnerGet(w http.ResponseWriter, r *http.Request) {
+func Get(w http.ResponseWriter, r *http.Request) {
 	shortnerTemplate.Execute(w, nil)
 }
 
 // ShortnerPost us
-func ShortnerPost(w http.ResponseWriter, r *http.Request) {
+func Post(w http.ResponseWriter, r *http.Request) {
 	errParseForm := r.ParseForm()
 
 	if errParseForm != nil {
@@ -73,7 +74,7 @@ func ShortnerPost(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
-		present, err := urlService.PresentShort(shortURL)
+		present, err := urls.Present(shortURL)
 		if err != nil {
 			shortnerTemplate.Execute(w, map[string]interface{}{
 				"error": ConstErrInternalError,
@@ -104,7 +105,7 @@ func ShortnerPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = urlService.Create(shortURL, x, y, z, hashedPassword)
+	err = urls.Create(shortURL, x, y, z, hashedPassword)
 	if err != nil {
 		shortnerTemplate.Execute(w, map[string]interface{}{
 			"error": ConstErrInternalError,
@@ -123,7 +124,8 @@ func ShortnerPost(w http.ResponseWriter, r *http.Request) {
 
 // ElongateGet is
 func ElongateGet(w http.ResponseWriter, r *http.Request) {
-	shortURL := "pathParams.ByName('id')"
+	vars := mux.Vars(r)
+	shortURL := vars["id"]
 
 	longURL, renderParams := checkShorURLAndPassword(shortURL, r)
 	if longURL == "" {
@@ -146,7 +148,8 @@ func ElongatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL := "pathParams.ByName('id')"
+	vars := mux.Vars(r)
+	shortURL := vars["id"]
 
 	longURL, renderParams := checkShorURLAndPassword(shortURL, r)
 	if longURL == "" {
@@ -159,7 +162,7 @@ func ElongatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[string]interface{}) {
-	mp, err := urlService.GetLong(shortURL)
+	mp, err := urls.GetLong(shortURL)
 
 	if err != nil {
 		return "", map[string]interface{}{
@@ -174,24 +177,31 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 	}
 
 	password := "default"
-	for i := 0; i < 2; i++ {
-		err = bcrypt.CompareHashAndPassword([]byte(mp["passwordHash"]), []byte(password))
-		if err != nil {
-			if err == bcrypt.ErrMismatchedHashAndPassword {
-				userPassword := r.FormValue("password")
-				if i == 1 || userPassword == "" {
+	err = bcrypt.CompareHashAndPassword([]byte(mp["passwordHash"]), []byte(password))
+	if err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			password = r.FormValue("password")
+			if password == "" {
+				return "", map[string]interface{}{
+					"shortURL":        shortURL,
+					"error":           ConstErrPasswordMissing,
+					"passwordProtect": true,
+				}
+			}
+			err = bcrypt.CompareHashAndPassword([]byte(mp["passwordHash"]), []byte(password))
+			if err != nil {
+				if err == bcrypt.ErrMismatchedHashAndPassword {
 					return "", map[string]interface{}{
 						"shortURL":        shortURL,
-						"error":           ConstErrPasswordMissing,
+						"error":           ConstErrPasswordMatchFailed,
 						"passwordProtect": true,
 					}
 				}
-				password = userPassword
-			} else {
-				fmt.Printf("_%v_\n", err.Error())
-				return "", map[string]interface{}{
-					"error": ConstErrInternalError,
-				}
+			}
+		} else {
+			fmt.Printf("_%v_\n", err.Error())
+			return "", map[string]interface{}{
+				"error": ConstErrInternalError,
 			}
 		}
 	}

@@ -15,7 +15,7 @@ import (
 var db *sql.DB
 
 // Init is called by main since it requires
-func Init() {
+func InitMySQL() {
 	DBConnectionString, _ := constants.Value("db-connection-string").(string)
 
 	var err error
@@ -31,8 +31,8 @@ func Init() {
 	}
 }
 
-func NewURLInterface() URLService {
-	urlService := url.UrlsDb{db: db}
+func NewURLInterfaceMySQL() url.Service {
+	urlService := url.UrlsDb{DB: db}
 	err := urlService.Init()
 	if err != nil {
 		panic(err.Error())

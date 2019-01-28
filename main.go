@@ -26,25 +26,27 @@ func init() {
 
 	cache.Init()
 	db.InitRedis()
+	db.InitMySQL()
 	handlers.Init()
 }
 
 func main() {
 
-	handlers.Init()
-	mainRouter := mux.NewRouter()
-	mainRouter.Handle("/", handlers.ShortnerRouter())
-
+	mainRouter := mux.NewRouter().StrictSlash(false)
 	mainRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./template/static/"))))
+
+	shortnerRouter := mainRouter.PathPrefix("/").Subrouter()
+	handlers.ShortnerRouter(shortnerRouter)
 
 	output, _ := constants.Value("output").(string)
 
-	file, err := os.Create(output)
+	file, err := os.OpenFile(output, os.O_WRONLY, os.ModeAppend)
 	if err != nil {
 		fmt.Printf("could not create file %s : %v", output, err)
 	}
 
 	loggedRouter := gorillaHandlers.LoggingHandler(file, mainRouter)
+	http.Handle("/", mainRouter)
 
 	port, _ := constants.Value("port").(string)
 

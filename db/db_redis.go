@@ -24,7 +24,7 @@ func InitRedis() {
 }
 
 // NewURLInterfaceRedis returns a URLService interface, using redis as backend
-func NewURLInterfaceRedis() url.URLService {
+func NewURLInterfaceRedis() url.Service {
 	urlService := url.UrlsRedis{Pool: pool}
 	err := urlService.Init()
 	if err != nil {
