@@ -4,7 +4,16 @@ package url
 type Service interface {
 	Init() error
 
-	Create(string, string, string, string, string) error
-	GetLong(string) (map[string]string, error)
+	Create(ShortURL) error
+	GetLong(string) (*ShortURL, error)
 	Present(string) (bool, error)
+}
+
+// ShortURL is the basic structure of datastore entry
+type ShortURL struct {
+	Short         string
+	EncryptedLong string
+	Salt          string
+	Nonce         string
+	PasswordHash  string
 }

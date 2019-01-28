@@ -11,8 +11,11 @@ import (
 var configs map[string]interface{}
 
 // Init reads the config file specified and makes it available to use by others
-func Init(configFileName string) error {
+func Init(configFileName string, paths ...string) error {
 	viper.SetConfigName(configFileName)
+	for _, configPath := range paths {
+		viper.AddConfigPath(configPath)
+	}
 	viper.AddConfigPath(".")
 
 	if err := viper.ReadInConfig(); err != nil {

@@ -39,16 +39,16 @@ func (u *UrlsDb) Init() error {
 }
 
 // GetLong returns all the info related to the given short URL
-func (u *UrlsDb) GetLong(short string) (map[string]string, error) {
-	var mp map[string]string
-	err := u.getLong.QueryRow(short).Scan(&mp)
+func (u *UrlsDb) GetLong(short string) (*ShortURL, error) {
+	urlObj := &ShortURL{Short: short}
+	err := u.getLong.QueryRow(short).Scan(&urlObj.Nonce, &(urlObj.Salt), &(urlObj.EncryptedLong), &(urlObj.PasswordHash))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return mp, nil
+	return urlObj, nil
 }
 
 // Present checks the presence of given short URL
@@ -65,8 +65,8 @@ func (u *UrlsDb) Present(short string) (bool, error) {
 }
 
 // Create is used to create an entry in the datastore
-func (u *UrlsDb) Create(short, nonce, salt, encrypted, passwordHash string) error {
-	_, err := u.create.Exec(short, encrypted, passwordHash, nonce, salt)
+func (u *UrlsDb) Create(urlObj ShortURL) error {
+	_, err := u.create.Exec(urlObj.Short, urlObj.EncryptedLong, urlObj.PasswordHash, urlObj.Nonce, urlObj.Salt)
 	if err != nil {
 		fmt.Println(err)
 		return err

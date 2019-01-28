@@ -35,7 +35,7 @@ func (u *UrlsRedis) Present(short string) (bool, error) {
 }
 
 // GetLong returns all the info related to the given short URL
-func (u *UrlsRedis) GetLong(short string) (map[string]string, error) {
+func (u *UrlsRedis) GetLong(short string) (*ShortURL, error) {
 
 	conn := u.Pool.Get()
 	defer conn.Close()
@@ -50,12 +50,17 @@ func (u *UrlsRedis) GetLong(short string) (map[string]string, error) {
 		//fmt.Println("REDIS GET error", errGetRedis)
 		return nil, errGetRedis
 	}
-
-	return resRedis, nil
+	return &ShortURL{
+		Short:         short,
+		EncryptedLong: resRedis["encrypted"],
+		Nonce:         resRedis["nonce"],
+		Salt:          resRedis["salt"],
+		PasswordHash:  resRedis["passwordHash"],
+	}, nil
 }
 
 // Create is used to create an entry in the datastore
-func (u *UrlsRedis) Create(short, nonce, salt, encrypted, passwordHash string) error {
+func (u *UrlsRedis) Create(urlObj ShortURL) error {
 	conn := u.Pool.Get()
 	defer conn.Close()
 
@@ -65,10 +70,10 @@ func (u *UrlsRedis) Create(short, nonce, salt, encrypted, passwordHash string) e
 	}
 
 	conn.Send("MULTI")
-	conn.Send("HSET", short, "encrypted", encrypted)
-	conn.Send("HSET", short, "salt", salt)
-	conn.Send("HSET", short, "nonce", nonce)
-	conn.Send("HSET", short, "passwordHash", passwordHash)
+	conn.Send("HSET", urlObj.Short, "encrypted", urlObj.EncryptedLong)
+	conn.Send("HSET", urlObj.Short, "salt", urlObj.Salt)
+	conn.Send("HSET", urlObj.Short, "nonce", urlObj.Nonce)
+	conn.Send("HSET", urlObj.Short, "passwordHash", urlObj.PasswordHash)
 
 	_, errRedis := conn.Do("EXEC")
 	if errRedis != nil {
