@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"./common"
-	"./shortner"
+	"github.com/antimatter96/awter-go/handlers/common"
+	"github.com/antimatter96/awter-go/handlers/shortner"
 	"github.com/gorilla/mux"
 )
 

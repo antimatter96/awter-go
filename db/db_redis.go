@@ -4,12 +4,12 @@ package db
 import (
 	"time"
 
-	"../constants"
+	"github.com/antimatter96/awter-go/constants"
 
 	redis "github.com/gomodule/redigo/redis"
 
-	cache "./cache"
-	url "./url"
+	cache "github.com/antimatter96/awter-go/db/cache"
+	url "github.com/antimatter96/awter-go/db/url"
 
 	// This exposes mysql connector
 	_ "github.com/go-sql-driver/mysql"

@@ -8,9 +8,9 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
 
-	"../../db"
-	"../../db/url"
-	. "../common"
+	"github.com/antimatter96/awter-go/db"
+	"github.com/antimatter96/awter-go/db/url"
+	. "github.com/antimatter96/awter-go/handlers/common"
 )
 
 var urls url.Service

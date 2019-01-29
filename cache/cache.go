@@ -3,8 +3,8 @@
 package cache
 
 import (
-	"../db"
-	"../db/cache"
+	"github.com/antimatter96/awter-go/db"
+	"github.com/antimatter96/awter-go/db/cache"
 )
 
 var cacheService cache.Service

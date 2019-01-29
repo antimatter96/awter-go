@@ -8,10 +8,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"./cache"
-	"./constants"
-	"./db"
-	"./handlers"
+	"github.com/antimatter96/awter-go/cache"
+	"github.com/antimatter96/awter-go/constants"
+	"github.com/antimatter96/awter-go/db"
+	"github.com/antimatter96/awter-go/handlers"
 
 	gorillaHandlers "github.com/gorilla/handlers"
 )

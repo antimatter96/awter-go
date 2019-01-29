@@ -1,7 +1,7 @@
 package common
 
 import (
-	"../../constants"
+	"github.com/antimatter96/awter-go/constants"
 	"github.com/gorilla/securecookie"
 )
 

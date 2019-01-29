@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"time"
 
-	"../../constants"
+	"github.com/antimatter96/awter-go/constants"
 )
 
 // All the different errors

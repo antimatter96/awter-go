@@ -4,8 +4,8 @@ package db
 import (
 	"database/sql"
 
-	"../constants"
-	url "./url"
+	"github.com/antimatter96/awter-go/constants"
+	url "github.com/antimatter96/awter-go/db/url"
 
 	// This exposes mysql connector
 	_ "github.com/go-sql-driver/mysql"
