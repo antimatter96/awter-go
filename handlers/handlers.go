@@ -4,20 +4,30 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/antimatter96/awter-go/constants"
 	"github.com/antimatter96/awter-go/handlers/common"
 	"github.com/antimatter96/awter-go/handlers/shortner"
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 )
 
-func Init() {
+func Init(store string) {
 	common.InitCommon()
-	shortner.InitShortner()
+	shortner.InitShortner(store)
 }
 func notFound(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "FUCK")
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprint(w, "FUCK from Shortner")
 }
 
 func ShortnerRouter(r *mux.Router) {
+	csrfMiddleware := csrf.Protect(
+		[]byte(constants.Value("csrf-token").(string)),
+		csrf.FieldName("_csrf_token"),
+		csrf.CookieName("_csrf_token"),
+		csrf.Secure(constants.ENVIRONMENT != "dev"),
+	)
+	r.Use(csrfMiddleware)
 	r.HandleFunc("/", shortner.Get).Methods("GET")
 	r.HandleFunc("/short", shortner.Get).Methods("GET")
 	r.HandleFunc("/short", shortner.Post).Methods("POST")

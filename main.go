@@ -18,16 +18,17 @@ import (
 
 func init() {
 	config := flag.String("config", "config", "config file")
+	store := flag.String("store", "redis", "The store to use:\n\tMySQL(mysql) or\n\tRedis(redis)\n")
 	flag.Parse()
 
 	if err := constants.Init(*config); err != nil {
 		fmt.Printf("cant initialize constants : %v", err)
 	}
 
-	cache.Init()
+	cache.Init(*store)
 	db.InitRedis()
 	db.InitMySQL()
-	handlers.Init()
+	handlers.Init(*store)
 }
 
 func main() {
