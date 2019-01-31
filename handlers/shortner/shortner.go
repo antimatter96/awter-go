@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/csrf"
+
 	"github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
@@ -15,14 +17,22 @@ import (
 
 var urls url.Service
 
-func InitShortner() {
-	urls = db.NewURLInterfaceMySQL()
+func InitShortner(store string) {
+	switch store {
+	case "mysql":
+		urls = db.NewURLInterfaceMySQL()
+	case "redis":
+		urls = db.NewURLInterfaceRedis()
+	}
+
 	parseTemplates()
 }
 
 // Get renders the basic form
 func Get(w http.ResponseWriter, r *http.Request) {
-	shortnerTemplate.Execute(w, nil)
+	shortnerTemplate.Execute(w, map[string]interface{}{
+		"csrf_token": csrf.Token(r),
+	})
 }
 
 // Post handles creation of a short URL
@@ -32,7 +42,8 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	if errParseForm != nil {
 		fmt.Println("parse error", errParseForm)
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error": ConstErrInternalError,
+			"error":      ConstErrInternalError,
+			"csrf_token": csrf.Token(r),
 		})
 		return
 	}
@@ -48,16 +59,18 @@ func Post(w http.ResponseWriter, r *http.Request) {
 
 	if link == "" || !govalidator.IsURL(link) {
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error":    ConstErrURLMissing,
-			"url_next": urlNext,
+			"error":      ConstErrURLMissing,
+			"url_next":   urlNext,
+			"csrf_token": csrf.Token(r),
 		})
 		return
 	}
 
 	if passwordProtect && password == "" {
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error":    ConstErrPasswordMissing,
-			"url_next": urlNext,
+			"error":      ConstErrPasswordMissing,
+			"url_next":   urlNext,
+			"csrf_token": csrf.Token(r),
 		})
 		return
 	} else if !passwordProtect {
@@ -70,14 +83,16 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		shortURL, err = generateRandomString2(6)
 		if err != nil {
 			shortnerTemplate.Execute(w, map[string]interface{}{
-				"error": ConstErrInternalError,
+				"error":      ConstErrInternalError,
+				"csrf_token": csrf.Token(r),
 			})
 			return
 		}
 		present, err := urls.Present(shortURL)
 		if err != nil {
 			shortnerTemplate.Execute(w, map[string]interface{}{
-				"error": ConstErrInternalError,
+				"error":      ConstErrInternalError,
+				"csrf_token": csrf.Token(r),
 			})
 			return
 		}
@@ -91,7 +106,8 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), BcryptCost)
 	if err != nil {
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error": ConstErrInternalError,
+			"error":      ConstErrInternalError,
+			"csrf_token": csrf.Token(r),
 		})
 		return
 	}
@@ -100,7 +116,8 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	x, y, z, err := encryptNew(password, link)
 	if err != nil {
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error": ConstErrInternalError,
+			"error":      ConstErrInternalError,
+			"csrf_token": csrf.Token(r),
 		})
 		return
 	}
@@ -110,7 +127,8 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	err = urls.Create(*urlObj)
 	if err != nil {
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error": ConstErrInternalError,
+			"error":      ConstErrInternalError,
+			"csrf_token": csrf.Token(r),
 		})
 		return
 	}
@@ -120,6 +138,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 		"passwordProtect": passwordProtect,
 		"password":        password,
 		"longURL":         link,
+		"csrf_token":      csrf.Token(r),
 	})
 
 }
@@ -145,7 +164,8 @@ func ElongatePost(w http.ResponseWriter, r *http.Request) {
 	if errParseForm != nil {
 		fmt.Println("parse error", errParseForm)
 		shortnerTemplate.Execute(w, map[string]interface{}{
-			"error": ConstErrInternalError,
+			"error":      ConstErrInternalError,
+			"csrf_token": csrf.Token(r),
 		})
 		return
 	}
@@ -169,14 +189,16 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 	if err != nil {
 		fmt.Println(err)
 		return "", map[string]interface{}{
-			"error": ConstErrInternalError,
+			"error":      ConstErrInternalError,
+			"csrf_token": csrf.Token(r),
 		}
 	}
 
 	if urlObj.Short == "" {
 		fmt.Println("Empty Map")
 		return "", map[string]interface{}{
-			"error": ConstErrURLMissing,
+			"error":      ConstErrURLMissing,
+			"csrf_token": csrf.Token(r),
 		}
 	}
 
@@ -190,6 +212,7 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 					"shortURL":        shortURL,
 					"error":           ConstErrPasswordMissing,
 					"passwordProtect": true,
+					"csrf_token":      csrf.Token(r),
 				}
 			}
 			err = bcrypt.CompareHashAndPassword([]byte(urlObj.PasswordHash), []byte(password))
@@ -199,13 +222,15 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 						"shortURL":        shortURL,
 						"error":           ConstErrPasswordMatchFailed,
 						"passwordProtect": true,
+						"csrf_token":      csrf.Token(r),
 					}
 				}
 			}
 		} else {
 			fmt.Printf("_%v_\n", err.Error())
 			return "", map[string]interface{}{
-				"error": ConstErrInternalError,
+				"error":      ConstErrInternalError,
+				"csrf_token": csrf.Token(r),
 			}
 		}
 	}
@@ -213,7 +238,8 @@ func checkShorURLAndPassword(shortURL string, r *http.Request) (string, map[stri
 	longURL, err := decryptNew(password, urlObj.EncryptedLong, urlObj.Nonce, urlObj.Salt)
 	if err != nil {
 		return "", map[string]interface{}{
-			"error": ConstErrInternalError,
+			"error":      ConstErrInternalError,
+			"csrf_token": csrf.Token(r),
 		}
 	}
 

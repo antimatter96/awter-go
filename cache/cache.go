@@ -9,8 +9,14 @@ import (
 
 var cacheService cache.Service
 
-func Init() {
-	cacheService = db.NewCacheInterfaceRedis()
+func Init(store string) {
+	switch store {
+	case "redis":
+		cacheService = db.NewCacheInterfaceRedis()
+	case "mysql":
+		//cacheService = db.NewCacheInterfaceMySQL()
+	}
+
 }
 
 func GetSessionValue(sessionId, key string) (interface{}, error) {

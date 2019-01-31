@@ -23,6 +23,7 @@
 				<div class="card border-primary mb-3">
 					<div class="card-body ">
 						<form action="short{{if .url_next }}?url_next={{.url_next}}{{end}}" method="post">
+							<input type="hidden" name="_csrf_token" value="{{ .csrf_token }}">
 							<div class="form-group">
 								<label for="inputURL">Link</label>
 								<input name="url" type="url" id="inputURL" class="form-control" required>

@@ -24,6 +24,7 @@
 					<div class="card-body ">
 						{{ if .passwordProtect }}
 						<form action="./{{ .shortURL }}" method="post">
+							<input type="hidden" name="_csrf_token" value="{{ .csrf_token }}">
 							<div class="form-group">
 								<label for="url_password">Password</label>
 								<input name="password" type="password" id="url_password" class="form-control" required>
