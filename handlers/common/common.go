@@ -31,6 +31,10 @@ const (
 	UserIDKey    key = 2
 )
 
+type contextKey int
+
+const CtxKeyResParms contextKey = 1
+
 var oneHour time.Duration = 720 * time.Minute
 
 // Init is used to initialize all things

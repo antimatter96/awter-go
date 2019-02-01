@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -10,6 +11,26 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 )
+
+func contextInitializer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mp := make(map[string]interface{})
+		ctx := context.WithValue(r.Context(), common.CtxKeyResParms, mp)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func addCSRFTokenToRenderParams(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mp, err := r.Context().Value(common.CtxKeyResParms).(map[string]interface{})
+		if !err {
+			panic("Context is not a map")
+		}
+		mp["csrf_token"] = csrf.Token(r)
+		ctx := context.WithValue(r.Context(), common.CtxKeyResParms, mp)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
 
 func Init(store string) {
 	common.InitCommon()
@@ -27,7 +48,11 @@ func ShortnerRouter(r *mux.Router) {
 		csrf.CookieName("_csrf_token"),
 		csrf.Secure(constants.ENVIRONMENT != "dev"),
 	)
+
 	r.Use(csrfMiddleware)
+	r.Use(contextInitializer)
+	r.Use(addCSRFTokenToRenderParams)
+
 	r.HandleFunc("/", shortner.Get).Methods("GET")
 	r.HandleFunc("/short", shortner.Get).Methods("GET")
 	r.HandleFunc("/short", shortner.Post).Methods("POST")

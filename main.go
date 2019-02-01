@@ -34,7 +34,9 @@ func init() {
 func main() {
 
 	mainRouter := mux.NewRouter().StrictSlash(false)
-	mainRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./template/static/"))))
+
+	mainRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/",
+		http.FileServer(http.Dir("./template/static/"))))
 
 	shortnerRouter := mainRouter.PathPrefix("/").Subrouter()
 	handlers.ShortnerRouter(shortnerRouter)
