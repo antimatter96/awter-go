@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/antimatter96/awter-go/constants"
-	"github.com/antimatter96/awter-go/handlers/common"
+	. "github.com/antimatter96/awter-go/handlers/common"
 	"github.com/antimatter96/awter-go/handlers/shortner"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
@@ -15,25 +15,25 @@ import (
 func contextInitializer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mp := make(map[string]interface{})
-		ctx := context.WithValue(r.Context(), common.CtxKeyResParms, mp)
+		ctx := context.WithValue(r.Context(), CtxKeyResParms, mp)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func addCSRFTokenToRenderParams(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mp, err := r.Context().Value(common.CtxKeyResParms).(map[string]interface{})
+		mp, err := r.Context().Value(CtxKeyResParms).(map[string]interface{})
 		if !err {
 			panic("Context is not a map")
 		}
 		mp["csrf_token"] = csrf.Token(r)
-		ctx := context.WithValue(r.Context(), common.CtxKeyResParms, mp)
+		ctx := context.WithValue(r.Context(), CtxKeyResParms, mp)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func Init(store string) {
-	common.InitCommon()
+	InitCommon()
 	shortner.InitShortner(store)
 }
 func notFound(w http.ResponseWriter, r *http.Request) {
