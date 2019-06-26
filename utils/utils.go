@@ -17,7 +17,7 @@ func MapMerge(map1, map2 map[string]interface{}) map[string]interface{} {
 	for k, v := range *smallerMap {
 		v2, ok := (*biggerMap)[k]
 		if ok {
-			if v2 != v2 {
+			if v != v2 {
 				panic(fmt.Errorf("Key already present, with different value"))
 			}
 		}
