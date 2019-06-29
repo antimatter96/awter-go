@@ -9,5 +9,5 @@
 		"hashKey": "",
 		"blockKey":""
 	},
-	"csrf-token": ""
+	"csrf-auth-key": ""
 }

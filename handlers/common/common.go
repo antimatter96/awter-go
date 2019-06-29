@@ -3,8 +3,10 @@ package common
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"net/http"
 
 	"github.com/antimatter96/awter-go/constants"
+	"github.com/gorilla/csrf"
 )
 
 // All the different errors
@@ -19,6 +21,8 @@ const (
 	ConstErrPasswordTooShort    string = "Password too short"
 	ConstErrURLNotPresent       string = "URL not present"
 )
+
+var CSRFMiddleware func(http.Handler) http.Handler
 
 var BcryptCost int
 
@@ -43,6 +47,16 @@ func InitCommon() {
 	if BcryptCost > 31 {
 		panic("Bcrypt Cost Exceeded")
 	}
+}
+
+func InitCSRF(errorHandler http.HandlerFunc) {
+	CSRFMiddleware = csrf.Protect(
+		[]byte(constants.Value("csrf-auth-key").(string)),
+		csrf.FieldName("_csrf_token"),
+		csrf.CookieName("_csrf_token"),
+		csrf.Secure(constants.ENVIRONMENT != "dev"),
+		csrf.ErrorHandler(errorHandler),
+	)
 }
 
 func GenerateRandomString(length int) (string, error) {

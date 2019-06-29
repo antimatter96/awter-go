@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/antimatter96/awter-go/constants"
 	. "github.com/antimatter96/awter-go/handlers/common"
 	"github.com/antimatter96/awter-go/handlers/shortner"
 	"github.com/gorilla/csrf"
@@ -37,27 +36,19 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "FUCK from Shortner")
 }
 
-func csrfError() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "%s %s", "CSRF SHIT HAPPENED", csrf.FailureReason(r))
-	})
-}
+var csrfErrorHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "%s %s", "CSRF SHIT HAPPENED", csrf.FailureReason(r))
+})
 
 func Init(store string) {
 	InitCommon()
+	InitCSRF(csrfErrorHandler)
 	shortner.InitShortner(store)
 }
 
 func ShortnerRouter(r *mux.Router) {
-	csrfMiddleware := csrf.Protect(
-		[]byte(constants.Value("csrf-token").(string)),
-		csrf.FieldName("_csrf_token"),
-		csrf.CookieName("_csrf_token"),
-		csrf.Secure(constants.ENVIRONMENT != "dev"),
-		csrf.ErrorHandler(csrfError()),
-	)
 
-	r.Use(csrfMiddleware)
+	r.Use(CSRFMiddleware)
 	r.Use(contextInitializer)
 	r.Use(addCSRFTokenToRenderParams)
 
