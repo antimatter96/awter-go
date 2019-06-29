@@ -8,7 +8,6 @@ import (
 
 	redis "github.com/gomodule/redigo/redis"
 
-	cache "github.com/antimatter96/awter-go/db/cache"
 	url "github.com/antimatter96/awter-go/db/url"
 
 	// This exposes mysql connector
@@ -31,15 +30,6 @@ func NewURLInterfaceRedis() url.Service {
 		panic(err.Error())
 	}
 	return &urlService
-}
-
-func NewCacheInterfaceRedis() cache.Service {
-	cacheService := cache.Redis{Pool: pool}
-	err := cacheService.Init()
-	if err != nil {
-		panic(err.Error())
-	}
-	return &cacheService
 }
 
 func checkStatusRedis() bool {

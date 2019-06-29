@@ -8,7 +8,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/antimatter96/awter-go/cache"
 	"github.com/antimatter96/awter-go/constants"
 	"github.com/antimatter96/awter-go/db"
 	"github.com/antimatter96/awter-go/handlers"
@@ -25,7 +24,6 @@ func init() {
 		fmt.Printf("cant initialize constants : %v", err)
 	}
 
-	cache.Init(*store)
 	db.InitRedis()
 	db.InitMySQL()
 	handlers.Init(*store)
@@ -34,7 +32,9 @@ func init() {
 func main() {
 
 	mainRouter := mux.NewRouter().StrictSlash(false)
-	mainRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./template/static/"))))
+
+	mainRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/",
+		http.FileServer(http.Dir("./template/static/"))))
 
 	shortnerRouter := mainRouter.PathPrefix("/").Subrouter()
 	handlers.ShortnerRouter(shortnerRouter)

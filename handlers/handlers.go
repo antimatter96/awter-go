@@ -1,23 +1,51 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/antimatter96/awter-go/constants"
-	"github.com/antimatter96/awter-go/handlers/common"
+	. "github.com/antimatter96/awter-go/handlers/common"
 	"github.com/antimatter96/awter-go/handlers/shortner"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 )
 
-func Init(store string) {
-	common.InitCommon()
-	shortner.InitShortner(store)
+func contextInitializer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mp := make(map[string]interface{})
+		ctx := context.WithValue(r.Context(), CtxKeyRenderParms, mp)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
+
+func addCSRFTokenToRenderParams(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mp, err := r.Context().Value(CtxKeyRenderParms).(map[string]interface{})
+		if !err {
+			panic("Context is not a map")
+		}
+		mp["csrf_token"] = csrf.Token(r)
+		ctx := context.WithValue(r.Context(), CtxKeyRenderParms, mp)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func notFound(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprint(w, "FUCK from Shortner")
+}
+
+func csrfError() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "%s %s", "CSRF SHIT HAPPENED", csrf.FailureReason(r))
+	})
+}
+
+func Init(store string) {
+	InitCommon()
+	shortner.InitShortner(store)
 }
 
 func ShortnerRouter(r *mux.Router) {
@@ -26,8 +54,13 @@ func ShortnerRouter(r *mux.Router) {
 		csrf.FieldName("_csrf_token"),
 		csrf.CookieName("_csrf_token"),
 		csrf.Secure(constants.ENVIRONMENT != "dev"),
+		csrf.ErrorHandler(csrfError()),
 	)
+
 	r.Use(csrfMiddleware)
+	r.Use(contextInitializer)
+	r.Use(addCSRFTokenToRenderParams)
+
 	r.HandleFunc("/", shortner.Get).Methods("GET")
 	r.HandleFunc("/short", shortner.Get).Methods("GET")
 	r.HandleFunc("/short", shortner.Post).Methods("POST")
