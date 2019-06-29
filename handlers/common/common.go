@@ -3,7 +3,6 @@ package common
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"time"
 
 	"github.com/antimatter96/awter-go/constants"
 )
@@ -35,8 +34,6 @@ type contextKey int
 
 // CtxKeyRenderParms is key for renderParams in context
 const CtxKeyRenderParms contextKey = 1
-
-var oneHour time.Duration = 720 * time.Minute
 
 // Init is used to initialize all things
 func InitCommon() {

@@ -73,7 +73,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 
 	var shortURL string
 	var err error
-	for true {
+	for {
 		shortURL, err = generateRandomString2(6)
 		if err != nil {
 			renderParams["error"] = ConstErrInternalError

@@ -32,17 +32,6 @@ func NewURLInterfaceRedis() url.Service {
 	return &urlService
 }
 
-func checkStatusRedis() bool {
-	conn := pool.Get()
-	defer conn.Close()
-
-	_, errPingRedis := conn.Do("PING")
-	if errPingRedis != nil {
-		return false
-	}
-	return true
-}
-
 // newPool generates a common pool from which we can access connections
 func newPool(addr string) *redis.Pool {
 	return &redis.Pool{
