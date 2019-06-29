@@ -6,49 +6,48 @@ import (
 	"net/http"
 	"os"
 
-	"./cache"
-	"./constants"
-	"./db"
-	"./handlers"
+	"github.com/gorilla/mux"
+
+	"github.com/antimatter96/awter-go/constants"
+	"github.com/antimatter96/awter-go/db"
+	"github.com/antimatter96/awter-go/handlers"
 
 	gorillaHandlers "github.com/gorilla/handlers"
-	"github.com/julienschmidt/httprouter"
 )
 
-func main() {
-
+func init() {
 	config := flag.String("config", "config", "config file")
+	store := flag.String("store", "redis", "The store to use:\n\tMySQL(mysql) or\n\tRedis(redis)\n")
 	flag.Parse()
 
 	if err := constants.Init(*config); err != nil {
 		fmt.Printf("cant initialize constants : %v", err)
 	}
 
-	cache.Init()
-	db.Init()
-	handlers.Init()
+	db.InitRedis()
+	db.InitMySQL()
+	handlers.Init(*store)
+}
 
-	router := httprouter.New()
+func main() {
 
-	router.GET("/short", handlers.Wrapper(handlers.ShortnerGet))
-	router.POST("/short", handlers.Wrapper(handlers.ShortnerPost))
-	router.POST("/i/", handlers.Wrapper(handlers.ShortnerPost))
-	router.POST("/i/:id", handlers.Wrapper(handlers.ShortnerPost))
-	router.GET("/i/:id", handlers.Wrapper(handlers.ElongateGet))
+	mainRouter := mux.NewRouter().StrictSlash(false)
 
-	// router.POST("/aws", handlers.Wrapper(handlers.ExtractSessionID(handlers.NewLoginHandlerPost)))
-	// router.GET("/as", handlers.Wrapper(handlers.ExtractSessionID(handlers.NewLoginHandlerGet)))
+	mainRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/",
+		http.FileServer(http.Dir("./template/static/"))))
 
-	router.ServeFiles("/static/*filepath", http.Dir("./template/static/"))
+	shortnerRouter := mainRouter.PathPrefix("/").Subrouter()
+	handlers.ShortnerRouter(shortnerRouter)
 
 	output, _ := constants.Value("output").(string)
 
-	file, err := os.Create(output)
+	file, err := os.OpenFile(output, os.O_WRONLY, os.ModeAppend)
 	if err != nil {
 		fmt.Printf("could not create file %s : %v", output, err)
 	}
 
-	loggedRouter := gorillaHandlers.LoggingHandler(file, router)
+	loggedRouter := gorillaHandlers.LoggingHandler(file, mainRouter)
+	http.Handle("/", mainRouter)
 
 	port, _ := constants.Value("port").(string)
 

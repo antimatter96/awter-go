@@ -8,5 +8,6 @@
 	"cookie":{
 		"hashKey": "",
 		"blockKey":""
-	}
+	},
+	"csrf-auth-key": ""
 }

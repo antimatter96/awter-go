@@ -10,9 +10,15 @@ import (
 
 var configs map[string]interface{}
 
+// ENVIRONMENT used by the others
+var ENVIRONMENT string
+
 // Init reads the config file specified and makes it available to use by others
-func Init(configFileName string) error {
+func Init(configFileName string, paths ...string) error {
 	viper.SetConfigName(configFileName)
+	for _, configPath := range paths {
+		viper.AddConfigPath(configPath)
+	}
 	viper.AddConfigPath(".")
 
 	if err := viper.ReadInConfig(); err != nil {
@@ -25,6 +31,8 @@ func Init(configFileName string) error {
 	for _, key := range keys {
 		configs[key] = viper.Get(key)
 	}
+
+	ENVIRONMENT = configs["env"].(string)
 
 	return nil
 }

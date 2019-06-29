@@ -1,11 +1,11 @@
-package handlers
+package common
 
 import (
-	"../constants"
+	"github.com/antimatter96/awter-go/constants"
 	"github.com/gorilla/securecookie"
 )
 
-var cookie *securecookie.SecureCookie
+var Cookie *securecookie.SecureCookie
 
 func initCookie() {
 	cookieConfig, _ := constants.Value("cookie").(map[string]interface{})
@@ -16,7 +16,6 @@ func initCookie() {
 	hashKey := []byte(hashKeyString)
 	blockKey := []byte(blockKeyString)
 
-	cookie = securecookie.New(hashKey, blockKey)
-	cookie.MaxAge(43200)
-
+	Cookie = securecookie.New(hashKey, blockKey)
+	Cookie.MaxAge(43200)
 }
