@@ -33,7 +33,8 @@ const (
 
 type contextKey int
 
-const CtxKeyResParms contextKey = 1
+// CtxKeyRenderParms is key for renderParams in context
+const CtxKeyRenderParms contextKey = 1
 
 var oneHour time.Duration = 720 * time.Minute
 

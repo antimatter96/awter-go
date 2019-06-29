@@ -30,13 +30,13 @@ func InitShortner(store string) {
 
 // Get renders the basic form
 func Get(w http.ResponseWriter, r *http.Request) {
-	renderParams, _ := r.Context().Value(CtxKeyResParms).(map[string]interface{})
+	renderParams, _ := r.Context().Value(CtxKeyRenderParms).(map[string]interface{})
 	shortnerTemplate.Execute(w, renderParams)
 }
 
 // Post handles creation of a short URL
 func Post(w http.ResponseWriter, r *http.Request) {
-	renderParams, _ := r.Context().Value(CtxKeyResParms).(map[string]interface{})
+	renderParams, _ := r.Context().Value(CtxKeyRenderParms).(map[string]interface{})
 	errParseForm := r.ParseForm()
 
 	if errParseForm != nil {
@@ -101,14 +101,14 @@ func Post(w http.ResponseWriter, r *http.Request) {
 	}
 	hashedPassword = string(hashed)
 
-	x, y, z, err := encryptNew(password, link)
+	nonce, salt, encryptedLong, err := encryptNew(password, link)
 	if err != nil {
 		renderParams["error"] = ConstErrInternalError
 		shortnerTemplate.Execute(w, renderParams)
 		return
 	}
 
-	urlObj := &url.ShortURL{Short: shortURL, Nonce: x, Salt: y, EncryptedLong: z, PasswordHash: hashedPassword}
+	urlObj := &url.ShortURL{Short: shortURL, Nonce: nonce, Salt: salt, EncryptedLong: encryptedLong, PasswordHash: hashedPassword}
 
 	err = urls.Create(*urlObj)
 	if err != nil {
@@ -128,7 +128,7 @@ func Post(w http.ResponseWriter, r *http.Request) {
 
 // ElongateGet is
 func ElongateGet(w http.ResponseWriter, r *http.Request) {
-	renderParams, _ := r.Context().Value(CtxKeyResParms).(map[string]interface{})
+	renderParams, _ := r.Context().Value(CtxKeyRenderParms).(map[string]interface{})
 
 	vars := mux.Vars(r)
 	shortURL := vars["id"]
@@ -145,7 +145,7 @@ func ElongateGet(w http.ResponseWriter, r *http.Request) {
 
 // ElongatePost is
 func ElongatePost(w http.ResponseWriter, r *http.Request) {
-	renderParams, _ := r.Context().Value(CtxKeyResParms).(map[string]interface{})
+	renderParams, _ := r.Context().Value(CtxKeyRenderParms).(map[string]interface{})
 	errParseForm := r.ParseForm()
 
 	if errParseForm != nil {

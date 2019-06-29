@@ -8,7 +8,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/antimatter96/awter-go/cache"
 	"github.com/antimatter96/awter-go/constants"
 	"github.com/antimatter96/awter-go/db"
 	"github.com/antimatter96/awter-go/handlers"
@@ -25,7 +24,6 @@ func init() {
 		fmt.Printf("cant initialize constants : %v", err)
 	}
 
-	cache.Init(*store)
 	db.InitRedis()
 	db.InitMySQL()
 	handlers.Init(*store)
