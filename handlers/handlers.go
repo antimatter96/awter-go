@@ -32,13 +32,20 @@ func addCSRFTokenToRenderParams(next http.Handler) http.Handler {
 	})
 }
 
-func Init(store string) {
-	InitCommon()
-	shortner.InitShortner(store)
-}
 func notFound(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprint(w, "FUCK from Shortner")
+}
+
+func csrfError() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "%s %s", "CSRF SHIT HAPPENED", csrf.FailureReason(r))
+	})
+}
+
+func Init(store string) {
+	InitCommon()
+	shortner.InitShortner(store)
 }
 
 func ShortnerRouter(r *mux.Router) {
@@ -47,6 +54,7 @@ func ShortnerRouter(r *mux.Router) {
 		csrf.FieldName("_csrf_token"),
 		csrf.CookieName("_csrf_token"),
 		csrf.Secure(constants.ENVIRONMENT != "dev"),
+		csrf.ErrorHandler(csrfError()),
 	)
 
 	r.Use(csrfMiddleware)
