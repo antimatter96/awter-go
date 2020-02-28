@@ -15,7 +15,7 @@ import (
 	gorillaHandlers "github.com/gorilla/handlers"
 )
 
-func init() {
+func main() {
 	config := flag.String("config", "config", "config file")
 	store := flag.String("store", "redis", "The store to use:\n\tMySQL(mysql) or\n\tRedis(redis)\n")
 	flag.Parse()
@@ -24,12 +24,16 @@ func init() {
 		fmt.Printf("cant initialize constants : %v", err)
 	}
 
+	output, _ := constants.Value("output").(string)
+
+	file, err := os.OpenFile(output, os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		fmt.Printf("could not create file %s : %v", output, err)
+	}
+
 	db.InitRedis()
 	db.InitMySQL()
 	handlers.Init(*store)
-}
-
-func main() {
 
 	mainRouter := mux.NewRouter().StrictSlash(false)
 
@@ -38,13 +42,6 @@ func main() {
 
 	shortnerRouter := mainRouter.PathPrefix("/").Subrouter()
 	handlers.ShortnerRouter(shortnerRouter)
-
-	output, _ := constants.Value("output").(string)
-
-	file, err := os.OpenFile(output, os.O_WRONLY, os.ModeAppend)
-	if err != nil {
-		fmt.Printf("could not create file %s : %v", output, err)
-	}
 
 	loggedRouter := gorillaHandlers.LoggingHandler(file, mainRouter)
 	http.Handle("/", mainRouter)
