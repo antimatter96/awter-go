@@ -32,12 +32,12 @@
 						</div>
 						{{ if .passwordProtect }}
 						<div class="form-group" id="password-containter-1">
-							<label for="url_password">Password</label>
-							<input name="password" type="password" id="url_password" class="form-control" value="{{ .password }}">
+							<label for="urlPassword">Password</label>
+							<input name="password" type="password" id="urlPassword" class="form-control" value="{{ .password }}">
 						</div>
 						<div class="form-group form-check" id="password-containter-2">
-							<input class="form-check-input" name="show_password" type="checkbox" id="hide_password" onclick="showHidePassword()">
-							<label class="form-check-label" for="hide_password">Show Password</label>
+							<input class="form-check-input" name="showPassword" type="checkbox" id="hidePassword">
+							<label class="form-check-label" for="hidePassword">Show Password</label>
 						</div>
 						{{end}}
 						{{ if .error }}
@@ -54,7 +54,7 @@
 	<script src="static/clipboard.min.js"></script> -->
 	<script>
 		function showHidePassword() {
-			let x = document.getElementById("url_password");
+			let x = document.getElementById("urlPassword");
 			if (x.type === "password") {
 				x.type = "text";
 			} else {
