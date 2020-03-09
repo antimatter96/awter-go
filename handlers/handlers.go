@@ -19,18 +19,6 @@ func contextInitializer(next http.Handler) http.Handler {
 	})
 }
 
-func addCSRFTokenToRenderParams(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		mp, err := r.Context().Value(CtxKeyRenderParms).(map[string]interface{})
-		if !err {
-			panic("Context is not a map")
-		}
-		mp["csrf_token"] = csrf.Token(r)
-		ctx := context.WithValue(r.Context(), CtxKeyRenderParms, mp)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
 func notFound(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 	fmt.Fprint(w, "FUCK from Shortner")
