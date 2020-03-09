@@ -9,19 +9,6 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-// All the different errors
-const (
-	ConstErrEmailMissing        string = "Email Not Present"
-	ConstErrPasswordMissing     string = "Password Not Present"
-	ConstErrNotRegistered       string = "No records found"
-	ConstErrInternalError       string = "An Error Occured"
-	ConstErrPasswordMatchFailed string = "Passwords do not match"
-	ConstErrEmailTaken          string = "Email Taken"
-	ConstErrURLMissing          string = "URL Missing"
-	ConstErrPasswordTooShort    string = "Password too short"
-	ConstErrURLNotPresent       string = "URL not present"
-)
-
 var CSRFMiddleware func(http.Handler) http.Handler
 
 var BcryptCost int
