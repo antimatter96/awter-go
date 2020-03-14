@@ -26,18 +26,6 @@ func InitShortner(store string) {
 	default:
 		panic("Not a valid store" + store)
 	}
-
-	parseTemplates()
-}
-
-// Get renders the basic form
-func Get(w http.ResponseWriter, r *http.Request) {
-	renderParams, _ := r.Context().Value(CtxKeyRenderParms).(map[string]interface{})
-	get(w, r, renderParams)
-}
-
-func get(w http.ResponseWriter, r *http.Request, renderParams map[string]interface{}) {
-	shortnerTemplate.Execute(w, renderParams)
 }
 
 // Post handles creation of a short URL

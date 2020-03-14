@@ -30,8 +30,8 @@ func Shortner(templatePath string) *server {
 	shortner := server{}
 
 	shortner.parseTemplates(templatePath)
+	shortner.initCSRF("s6v9y$B&E)H@McQfThWmZq4t7w!z%C*F", true) // Hardcode now
 	shortner.createRouter()
-	shortner.initCSRF("", true)
 
 	return &shortner
 }

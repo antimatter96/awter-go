@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/antimatter96/awter-go/constants"
-	"github.com/gorilla/csrf"
 )
 
 var CSRFMiddleware func(http.Handler) http.Handler
@@ -25,16 +24,6 @@ func InitCommon() {
 	if BcryptCost > 31 {
 		panic("Bcrypt Cost Exceeded")
 	}
-}
-
-func InitCSRF(errorHandler http.HandlerFunc) {
-	CSRFMiddleware = csrf.Protect(
-		[]byte(constants.Value("csrf-auth-key").(string)),
-		csrf.FieldName("_csrf_token"),
-		csrf.CookieName("_csrf_token"),
-		csrf.Secure(constants.ENVIRONMENT != "dev"),
-		csrf.ErrorHandler(errorHandler),
-	)
 }
 
 // HandlerWithContext is a custom request handler

@@ -36,10 +36,6 @@ func Init(store string) {
 
 func ShortnerRouter(r *mux.Router) {
 
-	r.Use(CSRFMiddleware)
-	r.Use(contextInitializer)
-	r.Use(addCSRFTokenToRenderParams)
-
 	r.HandleFunc("/", shortner.Get).Methods("GET")
 	r.HandleFunc("/short", shortner.Get).Methods("GET")
 	r.HandleFunc("/short", shortner.Post).Methods("POST")

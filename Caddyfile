@@ -1,6 +1,6 @@
 localhost:8080 {
   gzip
-  log /Users/arpitjain/_extras/awter-go/log.log
+  log /Users/arpitjain/_extras/awter-go/caddy.log
 
   browse /Users/arpitjain/_extras/awter-go/static
 
