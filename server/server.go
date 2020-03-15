@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/gorilla/securecookie"
+
+	"github.com/antimatter96/awter-go/db/url"
 )
 
 type contextKey int
@@ -23,11 +25,13 @@ type server struct {
 	cookie *securecookie.SecureCookie
 
 	csrfMiddleware func(http.Handler) http.Handler
+
+	urlService url.Service
 }
 
 // Shortner returns a
-func Shortner(templatePath string) *server {
-	shortner := server{}
+func Shortner(templatePath string, urlService url.Service) *server {
+	shortner := server{urlService: urlService}
 
 	shortner.parseTemplates(templatePath)
 	shortner.initCSRF("s6v9y$B&E)H@McQfThWmZq4t7w!z%C*F", true) // Hardcode now
