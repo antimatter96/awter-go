@@ -1,3 +1,5 @@
+// Pacakge server stores all the constants used all over the service
+
 package server
 
 import (
@@ -27,11 +29,15 @@ type server struct {
 	csrfMiddleware func(http.Handler) http.Handler
 
 	urlService url.Service
+
+	BcryptCost int
 }
 
 // Shortner returns a
 func Shortner(templatePath string, urlService url.Service) *server {
 	shortner := server{urlService: urlService}
+
+	shortner.BcryptCost = 12
 
 	shortner.parseTemplates(templatePath)
 	shortner.initCSRF("s6v9y$B&E)H@McQfThWmZq4t7w!z%C*F", true) // Hardcode now

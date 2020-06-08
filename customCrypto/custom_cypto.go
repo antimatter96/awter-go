@@ -1,4 +1,6 @@
-package lib
+// Pacakge customcrypto stores all the constants used all over the service
+
+package customcrypto
 
 import (
 	"crypto/rand"
@@ -13,7 +15,9 @@ import (
 
 var letterRunes = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func generateRandomString2(length int) (string, error) {
+// GenerateRandomString is used to generate a string of given length
+// String will follow the pattern [0-9a-zA-Z]+
+func GenerateRandomString(length int) (string, error) {
 
 	randomFactor := make([]byte, 2)
 	_, err := rand.Read(randomFactor)
@@ -30,7 +34,7 @@ func generateRandomString2(length int) (string, error) {
 	return string(arr), nil
 }
 
-func encrypt(password, data string) (nonceToSave, saltToSave, encryptedToSave string, err error) {
+func Encrypt(password, data string) (nonceToSave, saltToSave, encryptedToSave string, err error) {
 	defer func() {
 		if errRecovered := recover(); errRecovered != nil {
 			if value, isError := errRecovered.(error); isError {
@@ -73,7 +77,7 @@ func encrypt(password, data string) (nonceToSave, saltToSave, encryptedToSave st
 	return
 }
 
-func decrypt(password, data, nonceString, saltString string) (long string, err error) {
+func Decrypt(password, data, nonceString, saltString string) (long string, err error) {
 	defer func() {
 		if errRecovered := recover(); errRecovered != nil {
 			if value, isError := errRecovered.(error); isError {
