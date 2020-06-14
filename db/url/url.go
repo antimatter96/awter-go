@@ -1,7 +1,7 @@
 package url
 
 const (
-	ErrorNotFound string = "Not found in db"
+	ErrorNotFound string = "not found in db"
 )
 
 // Service is the
