@@ -1,0 +1,11 @@
+version = 1
+
+exclude_patterns = ["static/**"]
+
+[[analyzers]]
+name = "go"
+enabled = true
+
+  [analyzers.meta]
+  import_path = "github.com/antimatter96/awter-go"
+
