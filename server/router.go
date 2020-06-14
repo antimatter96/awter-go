@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-func (server *server) createRouter() {
+func (server *Server) createRouter() {
 	r := chi.NewRouter()
 
 	r.Use(middleware.NoCache)
@@ -35,7 +35,7 @@ func (server *server) createRouter() {
 	server.R = r
 }
 
-func (server *server) renderParamsInit(next http.Handler) http.Handler {
+func (server *Server) renderParamsInit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mp := make(map[string]interface{})
 		ctx := context.WithValue(r.Context(), ctxKeyRenderParms, &mp)
@@ -43,7 +43,7 @@ func (server *server) renderParamsInit(next http.Handler) http.Handler {
 	})
 }
 
-func (server *server) addCSRFTokenToRenderParams(next http.Handler) http.Handler {
+func (server *Server) addCSRFTokenToRenderParams(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mp, _ := r.Context().Value(ctxKeyRenderParms).(*map[string]interface{})
 		(*mp)["csrf_token"] = csrf.Token(r)
@@ -51,7 +51,7 @@ func (server *server) addCSRFTokenToRenderParams(next http.Handler) http.Handler
 	})
 }
 
-func (server *server) parseForm(next http.Handler) http.Handler {
+func (server *Server) parseForm(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		errParseForm := r.ParseForm()
 		if errParseForm != nil {

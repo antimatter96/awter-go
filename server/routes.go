@@ -14,12 +14,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (server *server) mainGet(w http.ResponseWriter, r *http.Request) {
+func (server *Server) mainGet(w http.ResponseWriter, r *http.Request) {
 	renderParams := r.Context().Value(ctxKeyRenderParms).(*map[string]interface{})
 	server.shortnerTemplate.Execute(w, renderParams)
 }
 
-func (server *server) shortPost(w http.ResponseWriter, r *http.Request) {
+func (server *Server) shortPost(w http.ResponseWriter, r *http.Request) {
 	renderParams := r.Context().Value(ctxKeyRenderParms).(*map[string]interface{})
 
 	errParseForm := r.ParseForm()
@@ -110,15 +110,15 @@ func (server *server) shortPost(w http.ResponseWriter, r *http.Request) {
 	server.createdTemplate.Execute(w, renderParams)
 }
 
-func (server *server) elongateGet(w http.ResponseWriter, r *http.Request) {
+func (server *Server) elongateGet(w http.ResponseWriter, r *http.Request) {
 	server.checkShortURLAndPassword(w, r, false)
 }
 
-func (server *server) elongatePost(w http.ResponseWriter, r *http.Request) {
+func (server *Server) elongatePost(w http.ResponseWriter, r *http.Request) {
 	server.checkShortURLAndPassword(w, r, true)
 }
 
-func (server *server) URLCtx(next http.Handler) http.Handler {
+func (server *Server) URLCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ID := chi.URLParam(r, "id")
 		URLObject, err := server.urlService.GetLong(ID)
@@ -135,7 +135,7 @@ func (server *server) URLCtx(next http.Handler) http.Handler {
 	})
 }
 
-func (server *server) checkShortURLAndPassword(w http.ResponseWriter, r *http.Request, isPost bool) {
+func (server *Server) checkShortURLAndPassword(w http.ResponseWriter, r *http.Request, isPost bool) {
 	renderParams := r.Context().Value(ctxKeyRenderParms).(*map[string]interface{})
 
 	ctx := r.Context()

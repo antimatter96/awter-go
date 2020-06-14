@@ -18,7 +18,7 @@ type contextKey int
 const ctxKeyRenderParms contextKey = 1
 const ctxKeyURLObject contextKey = 2
 
-type server struct {
+type Server struct {
 	R *chi.Mux
 
 	shortnerTemplate *template.Template
@@ -35,8 +35,8 @@ type server struct {
 }
 
 // Shortner returns a
-func Shortner(templatePath string, urlService url.Service) *server {
-	shortner := server{urlService: urlService}
+func Shortner(templatePath string, urlService url.Service) *Server {
+	shortner := Server{urlService: urlService}
 
 	shortner.BcryptCost = 12
 

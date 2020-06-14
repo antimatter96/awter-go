@@ -5,7 +5,7 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
-func (server *server) initCookie(hashKeyString, blockKeyString string) {
+func (server *Server) initCookie(hashKeyString, blockKeyString string) {
 	hashKey := []byte(hashKeyString)
 	blockKey := []byte(blockKeyString)
 
@@ -13,7 +13,7 @@ func (server *server) initCookie(hashKeyString, blockKeyString string) {
 	server.cookie.MaxAge(43200)
 }
 
-func (server *server) initCSRF(csrfAuthKey string, dev bool) {
+func (server *Server) initCSRF(csrfAuthKey string, dev bool) {
 	server.csrfMiddleware = csrf.Protect(
 		[]byte(csrfAuthKey),
 		csrf.FieldName("_csrf_token"),
