@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	. "github.com/antimatter96/awter-go/handlers/common"
 	"github.com/antimatter96/awter-go/handlers/shortner"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"

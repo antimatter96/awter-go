@@ -2,6 +2,7 @@ package url
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	// Only way to get it working
@@ -44,7 +45,7 @@ func (u *UrlsDb) GetLong(short string) (*ShortURL, error) {
 	err := u.getLong.QueryRow(short).Scan(&urlObj.Nonce, &(urlObj.Salt), &(urlObj.EncryptedLong), &(urlObj.PasswordHash))
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return nil, errors.New(ErrorNotFound)
 		}
 		return nil, err
 	}
@@ -57,7 +58,7 @@ func (u *UrlsDb) Present(short string) (bool, error) {
 	err := u.checkShort.QueryRow(short).Scan(&id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return false, nil
+			return false, errors.New(ErrorNotFound)
 		}
 		return false, err
 	}

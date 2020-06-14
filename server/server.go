@@ -16,6 +16,7 @@ type contextKey int
 
 // ctxKeyRenderParms is key for renderParams in context
 const ctxKeyRenderParms contextKey = 1
+const ctxKeyURLObject contextKey = 2
 
 type server struct {
 	R *chi.Mux

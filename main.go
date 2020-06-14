@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -14,7 +15,10 @@ import (
 	"github.com/antimatter96/awter-go/server"
 )
 
+var build string
+
 func main() {
+	fmt.Printf("Starting build: %s\n", build)
 	var port = flag.Int("port", 8080, "port")
 	var templatePath = flag.String("template", "./template", "the template directory")
 	var mySQLConnectionString = flag.String("mysqlURL", "user:password@/name?parseTime=true", "MySQL connection string")
@@ -23,7 +27,7 @@ func main() {
 	flag.Parse()
 
 	var urlSevice url.Service
-	if *mySQLConnectionString != "-" {
+	if *mySQLConnectionString != "" {
 		sqlDB, err := db.InitMySQL(*mySQLConnectionString)
 		if err != nil {
 			panic(err)
@@ -32,7 +36,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-	} else if *redisAddressstring != "-" {
+	} else if *redisAddressstring != "" {
 		var err error
 		redisDB := db.InitRedis(*redisAddressstring)
 		urlSevice, err = db.NewURLInterfaceRedis(redisDB)

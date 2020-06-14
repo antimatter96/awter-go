@@ -3,12 +3,14 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/antimatter96/awter-go/customcrypto"
 	"github.com/antimatter96/awter-go/db/url"
 	"github.com/asaskevich/govalidator"
+	"github.com/go-chi/chi"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -29,12 +31,6 @@ func (server *server) shortPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	urlNext := "/"
-	if len(r.Form["url_next"]) > 0 {
-		urlNext = r.Form["url_next"][0]
-		(*renderParams)["url_next"] = urlNext
-	}
-
 	link := r.FormValue("url")
 	passwordProtect := r.FormValue("passwordProtect") == "on"
 	password := r.FormValue("password")
@@ -47,7 +43,6 @@ func (server *server) shortPost(w http.ResponseWriter, r *http.Request) {
 
 	if passwordProtect && password == "" {
 		(*renderParams)["error"] = ErrPasswordMissing
-		(*renderParams)["url_next"] = urlNext
 		server.shortnerTemplate.Execute(w, renderParams)
 		return
 	} else if !passwordProtect {
@@ -56,6 +51,7 @@ func (server *server) shortPost(w http.ResponseWriter, r *http.Request) {
 
 	var shortURL string
 	var err error
+	attempt := 0
 	for {
 		shortURL, err = customcrypto.GenerateRandomString(6)
 		if err != nil {
@@ -71,6 +67,12 @@ func (server *server) shortPost(w http.ResponseWriter, r *http.Request) {
 		}
 		if !present {
 			break
+		}
+		attempt++
+		if attempt > 3-1 {
+			(*renderParams)["error"] = ErrInternalError
+			server.shortnerTemplate.Execute(w, renderParams)
+			return
 		}
 	}
 
@@ -109,9 +111,84 @@ func (server *server) shortPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (server *server) elongateGet(w http.ResponseWriter, r *http.Request) {
-	server.elongateTemplate.Execute(w, nil)
+	server.checkShortURLAndPassword(w, r, false)
 }
 
 func (server *server) elongatePost(w http.ResponseWriter, r *http.Request) {
-	server.shortnerTemplate.Execute(w, nil)
+	server.checkShortURLAndPassword(w, r, true)
+}
+
+func (server *server) URLCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ID := chi.URLParam(r, "id")
+		URLObject, err := server.urlService.GetLong(ID)
+		if err != nil {
+			if err.Error() == url.ErrorNotFound {
+				http.Error(w, http.StatusText(404), 404)
+				return
+			}
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+		ctx := context.WithValue(r.Context(), ctxKeyURLObject, URLObject)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (server *server) checkShortURLAndPassword(w http.ResponseWriter, r *http.Request, isPost bool) {
+	renderParams := r.Context().Value(ctxKeyRenderParms).(*map[string]interface{})
+
+	ctx := r.Context()
+
+	URLObject, ok := ctx.Value(ctxKeyURLObject).(*url.ShortURL)
+	if !ok {
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	password := "default"
+	canPass := false
+	err := bcrypt.CompareHashAndPassword([]byte(URLObject.PasswordHash), []byte(password))
+	if err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			(*renderParams)["shortURL"] = URLObject.Short
+			(*renderParams)["passwordProtect"] = true
+			(*renderParams)["error"] = ErrPasswordMissing
+
+			if isPost {
+				password = r.FormValue("password")
+				if password != "" {
+					err = bcrypt.CompareHashAndPassword([]byte(URLObject.PasswordHash), []byte(password))
+					if err != nil {
+						if err == bcrypt.ErrMismatchedHashAndPassword {
+							(*renderParams)["error"] = ErrPasswordMatchFailed
+						} else {
+							fmt.Printf("_%v_\n", err.Error())
+							(*renderParams)["error"] = ErrInternalError
+						}
+					} else {
+						(*renderParams)["error"] = nil
+						canPass = true
+					}
+				}
+			}
+		} else {
+			fmt.Printf("_%v_\n", err.Error())
+			(*renderParams)["error"] = ErrInternalError
+		}
+	}
+
+	if !canPass {
+		server.elongateTemplate.Execute(w, renderParams)
+		return
+	}
+
+	longURL, err := customcrypto.Decrypt(password, URLObject.EncryptedLong, URLObject.Nonce, URLObject.Salt)
+	if err != nil {
+		(*renderParams)["error"] = ErrInternalError
+		server.elongateTemplate.Execute(w, renderParams)
+		return
+	}
+
+	http.Redirect(w, r, longURL, http.StatusMovedPermanently)
 }
