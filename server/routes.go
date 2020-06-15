@@ -118,7 +118,7 @@ func (server *Server) elongatePost(w http.ResponseWriter, r *http.Request) {
 	server.checkShortURLAndPassword(w, r, true)
 }
 
-func (server *Server) URLCtx(next http.Handler) http.Handler {
+func (server *Server) urlCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ID := chi.URLParam(r, "id")
 		URLObject, err := server.urlService.GetLong(ID)

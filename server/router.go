@@ -25,7 +25,7 @@ func (server *Server) createRouter() {
 	r.Post("/short", server.shortPost)
 
 	r.Route("/i/{id}", func(r chi.Router) {
-		r.Use(server.URLCtx)
+		r.Use(server.urlCtx)
 		r.Use(server.parseForm)
 
 		r.Get("/", server.elongateGet)
