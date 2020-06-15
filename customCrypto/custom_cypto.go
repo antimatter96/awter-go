@@ -116,7 +116,7 @@ func Decrypt(password, data, nonceString, saltString string) (long string, err e
 
 	decrypted, ok := secretbox.Open(nil, []byte(encBytes), &secretKeyLimited, &dkLimited)
 	if !ok {
-		err = fmt.Errorf("Cant decode")
+		err = fmt.Errorf("cant decode")
 		panic(err)
 	}
 	long = string(decrypted)
