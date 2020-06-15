@@ -1,5 +1,9 @@
 package url
 
+const (
+	ErrorNotFound string = "not found in db"
+)
+
 // Service is the
 type Service interface {
 	Init() error

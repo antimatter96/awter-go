@@ -5,50 +5,80 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/hlog"
 
-	"github.com/antimatter96/awter-go/constants"
 	"github.com/antimatter96/awter-go/db"
-	"github.com/antimatter96/awter-go/handlers"
-
-	gorillaHandlers "github.com/gorilla/handlers"
+	"github.com/antimatter96/awter-go/db/url"
+	"github.com/antimatter96/awter-go/server"
 )
 
+var build string
+
 func main() {
-	config := flag.String("config", "config", "config file")
-	store := flag.String("store", "redis", "The store to use:\n\tMySQL(mysql) or\n\tRedis(redis)\n")
+	fmt.Printf("Starting build: %s\n", build)
+	var port = flag.Int("port", 8080, "port")
+	var templatePath = flag.String("template", "./template", "the template directory")
+	var mySQLConnectionString = flag.String("mysqlURL", "user:password@/name?parseTime=true", "MySQL connection string")
+	var redisAddressstring = flag.String("redisURL", "127.0.0.1:6379", "redis connection string")
+
 	flag.Parse()
 
-	if err := constants.Init(*config); err != nil {
-		fmt.Printf("cant initialize constants : %v", err)
+	var urlSevice url.Service
+	if *mySQLConnectionString != "" {
+		sqlDB, err := db.InitMySQL(*mySQLConnectionString)
+		if err != nil {
+			panic(err)
+		}
+		urlSevice, err = db.NewURLInterfaceMySQL(sqlDB)
+		if err != nil {
+			panic(err)
+		}
+	} else if *redisAddressstring != "" {
+		var err error
+		redisDB := db.InitRedis(*redisAddressstring)
+		urlSevice, err = db.NewURLInterfaceRedis(redisDB)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		panic("mysqlURL, redisURL both can't be null")
 	}
 
-	output, _ := constants.Value("output").(string)
+	shortner := server.Shortner(*templatePath, urlSevice)
 
-	file, err := os.OpenFile(output, os.O_WRONLY, os.ModeAppend)
-	if err != nil {
-		fmt.Printf("could not create file %s : %v", output, err)
-	}
+	logger := newLogger()
 
-	db.InitRedis()
-	db.InitMySQL()
-	handlers.Init(*store)
+	r := newRouter(shortner, logger)
 
-	mainRouter := mux.NewRouter().StrictSlash(false)
+	http.ListenAndServe(":"+strconv.Itoa(*port), r)
+}
 
-	mainRouter.PathPrefix("/static/").Handler(http.StripPrefix("/static/",
-		http.FileServer(http.Dir("./template/static/"))))
+func newRouter(shortner *server.Server, logger zerolog.Logger) *chi.Mux {
+	r := chi.NewRouter()
 
-	shortnerRouter := mainRouter.PathPrefix("/").Subrouter()
-	handlers.ShortnerRouter(shortnerRouter)
+	r.Use(hlog.NewHandler(logger))
 
-	loggedRouter := gorillaHandlers.LoggingHandler(file, mainRouter)
-	http.Handle("/", mainRouter)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(60 * time.Second))
 
-	port, _ := constants.Value("port").(string)
+	r.Mount("/", shortner.R)
 
-	if err := http.ListenAndServe(port, loggedRouter); err != nil {
-		fmt.Printf("error starting server: %v", err)
-	}
+	return r
+}
+
+func newLogger() zerolog.Logger {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+
+	log := zerolog.New(os.Stdout).With().Timestamp().Logger()
+
+	return log
 }

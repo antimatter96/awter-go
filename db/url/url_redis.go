@@ -1,6 +1,9 @@
 package url
 
 import (
+	"errors"
+	"fmt"
+
 	redis "github.com/gomodule/redigo/redis"
 )
 
@@ -47,8 +50,11 @@ func (u *UrlsRedis) GetLong(short string) (*ShortURL, error) {
 
 	resRedis, errGetRedis := redis.StringMap(conn.Do("HGETALL", short))
 	if errGetRedis != nil {
-		//fmt.Println("REDIS GET error", errGetRedis)
+		fmt.Println("REDIS GET error", errGetRedis)
 		return nil, errGetRedis
+	}
+	if len(resRedis) == 0 {
+		return nil, errors.New(ErrorNotFound)
 	}
 	return &ShortURL{
 		Short:         short,
@@ -69,13 +75,12 @@ func (u *UrlsRedis) Create(urlObj ShortURL) error {
 		return errPingRedis
 	}
 
-	conn.Send("MULTI")
-	conn.Send("HSET", urlObj.Short, "encrypted", urlObj.EncryptedLong)
-	conn.Send("HSET", urlObj.Short, "salt", urlObj.Salt)
-	conn.Send("HSET", urlObj.Short, "nonce", urlObj.Nonce)
-	conn.Send("HSET", urlObj.Short, "passwordHash", urlObj.PasswordHash)
-
-	_, errRedis := conn.Do("EXEC")
+	_, errRedis := conn.Do("HMSET", urlObj.Short,
+		"encrypted", urlObj.EncryptedLong,
+		"salt", urlObj.Salt,
+		"nonce", urlObj.Nonce,
+		"passwordHash", urlObj.PasswordHash,
+	)
 	if errRedis != nil {
 		return errRedis
 	}

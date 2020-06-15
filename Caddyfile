@@ -1,0 +1,11 @@
+localhost:8080 {
+  gzip
+  log /Users/arpitjain/_extras/awter-go/caddy.log
+
+  browse /Users/arpitjain/_extras/awter-go/static
+
+  proxy / localhost:9005 {
+    transparent
+    except /static
+  }
+}

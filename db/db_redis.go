@@ -4,8 +4,6 @@ package db
 import (
 	"time"
 
-	"github.com/antimatter96/awter-go/constants"
-
 	redis "github.com/gomodule/redigo/redis"
 
 	url "github.com/antimatter96/awter-go/db/url"
@@ -14,22 +12,29 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var pool *redis.Pool
-
 // InitRedis is used to initialize the redis connections
-func InitRedis() {
-	x := constants.Value("redisAddress").(string)
-	pool = newPool(x)
+func InitRedis(redisAddress string) *redis.Pool {
+	pool := newPool(redisAddress)
+	return pool
 }
 
 // NewURLInterfaceRedis returns a URLService interface, using redis as backend
-func NewURLInterfaceRedis() url.Service {
+func NewURLInterfaceRedis(pool *redis.Pool) (url.Service, error) {
+	conn := pool.Get()
+	defer conn.Close()
+
+	_, errPingRedis := conn.Do("PING")
+	if errPingRedis != nil {
+		return nil, errPingRedis
+	}
+
 	urlService := url.UrlsRedis{Pool: pool}
 	err := urlService.Init()
 	if err != nil {
-		panic(err.Error())
+		pool.Close()
+		return nil, err
 	}
-	return &urlService
+	return &urlService, nil
 }
 
 // newPool generates a common pool from which we can access connections

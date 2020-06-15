@@ -1,4 +1,6 @@
-package shortner
+// Pacakge customcrypto stores all the constants used all over the service
+
+package customcrypto
 
 import (
 	"crypto/rand"
@@ -11,9 +13,17 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
+const (
+	keyLen = 32
+	nonceLen = 24
+	saltLen = 12
+)
+
 var letterRunes = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func generateRandomString2(length int) (string, error) {
+// GenerateRandomString is used to generate a string of given length
+// String will follow the pattern [0-9a-zA-Z]+
+func GenerateRandomString(length int) (string, error) {
 
 	randomFactor := make([]byte, 2)
 	_, err := rand.Read(randomFactor)
@@ -30,7 +40,7 @@ func generateRandomString2(length int) (string, error) {
 	return string(arr), nil
 }
 
-func encryptNew(password, data string) (nonceToSave, saltToSave, encryptedToSave string, err error) {
+func Encrypt(password, data string) (nonceToSave, saltToSave, encryptedToSave string, err error) {
 	defer func() {
 		if errRecovered := recover(); errRecovered != nil {
 			if value, isError := errRecovered.(error); isError {
@@ -43,15 +53,7 @@ func encryptNew(password, data string) (nonceToSave, saltToSave, encryptedToSave
 	}()
 	pwdBuff := []byte(password)
 
-	nonce := make([]byte, 24)
-	if _, err := rand.Read(nonce); err != nil {
-		panic(err)
-	}
-
-	var secretKeyLimited [24]byte
-	copy(secretKeyLimited[:], nonce)
-
-	salt := make([]byte, 12)
+	salt := make([]byte, saltLen)
 	if _, err := rand.Read(salt); err != nil {
 		panic(err)
 	}
@@ -61,8 +63,16 @@ func encryptNew(password, data string) (nonceToSave, saltToSave, encryptedToSave
 		panic(err)
 	}
 
-	var ekLimited [32]byte
+	var ekLimited [keyLen]byte
 	copy(ekLimited[:], ek)
+
+	nonce := make([]byte, nonceLen)
+	if _, err := rand.Read(nonce); err != nil {
+		panic(err)
+	}
+
+	var secretKeyLimited [nonceLen]byte
+	copy(secretKeyLimited[:], nonce)
 
 	encrypted := secretbox.Seal(nil, []byte(data), &secretKeyLimited, &ekLimited)
 
@@ -73,7 +83,7 @@ func encryptNew(password, data string) (nonceToSave, saltToSave, encryptedToSave
 	return
 }
 
-func decryptNew(password, data, nonceString, saltString string) (long string, err error) {
+func Decrypt(password, data, nonceString, saltString string) (long string, err error) {
 	defer func() {
 		if errRecovered := recover(); errRecovered != nil {
 			if value, isError := errRecovered.(error); isError {
@@ -82,39 +92,42 @@ func decryptNew(password, data, nonceString, saltString string) (long string, er
 			}
 		}
 	}()
-	pwdBuff := []byte(password)
-
-	nonceBytes, err := hex.DecodeString(nonceString)
-	if err != nil {
-		panic(err)
-	}
-	var secretKeyLimited [24]byte
-	copy(secretKeyLimited[:], nonceBytes)
 
 	saltBytes, err := hex.DecodeString(saltString)
 	if err != nil {
 		panic(err)
 	}
 
-	dk, err := scrypt.Key(pwdBuff, saltBytes, 16384, 8, 1, 32)
+	pwdBuff := []byte(password)
+	dk, err := scrypt.Key(pwdBuff, saltBytes, 16384, 8, 1, keyLen)
 	if err != nil {
 		panic(err)
 	}
 
-	var dkLimited [32]byte
+	nonceBytes, err := hex.DecodeString(nonceString)
+	if err != nil {
+		panic(err)
+	}
+
+	var dkLimited [keyLen]byte
 	copy(dkLimited[:], dk)
 
-	encBytes, err := hex.DecodeString(data)
+	var secretKeyLimited [nonceLen]byte
+	copy(secretKeyLimited[:], nonceBytes)
 
+	encBytes, err := hex.DecodeString(data)
 	if err != nil {
 		panic(err)
 	}
 
 	decrypted, ok := secretbox.Open(nil, []byte(encBytes), &secretKeyLimited, &dkLimited)
 	if !ok {
-		err = fmt.Errorf("Cant decode")
+		err = fmt.Errorf("cant decode")
 		panic(err)
 	}
 	long = string(decrypted)
 	return
 }
+
+// customCrypt is all that you get
+type customCrypt struct {}

@@ -4,46 +4,30 @@ package db
 import (
 	"database/sql"
 
-	"github.com/antimatter96/awter-go/constants"
 	url "github.com/antimatter96/awter-go/db/url"
 
 	// This exposes mysql connector
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// The main db object
-var sqlDB *sql.DB
-
 // Init is called by main since it requires
-func InitMySQL() {
-	DBConnectionString, _ := constants.Value("db-connection-string").(string)
-
-	var err error
-	sqlDB, err = sql.Open("mysql", DBConnectionString)
+func InitMySQL(DBConnectionString string) (*sql.DB, error) {
+	sqlDB, err := sql.Open("mysql", DBConnectionString)
 	sqlDB.SetMaxIdleConns(1)
 	sqlDB.SetMaxOpenConns(3)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 	err = sqlDB.Ping()
 	if err != nil {
-		panic(err.Error())
+		sqlDB.Close()
+		return nil, err
 	}
+	return sqlDB, nil
 }
 
-func NewURLInterfaceMySQL() url.Service {
+func NewURLInterfaceMySQL(sqlDB *sql.DB) (url.Service, error) {
 	urlService := url.UrlsDb{DB: sqlDB}
 	err := urlService.Init()
-	if err != nil {
-		panic(err.Error())
-	}
-	return &urlService
-}
-
-func checkStatus() bool {
-	err := sqlDB.Ping()
-	if err != nil {
-		return false
-	}
-	return true
+	return &urlService, err
 }
