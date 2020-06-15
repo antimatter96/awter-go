@@ -76,15 +76,13 @@ func (server *Server) shortPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var hashedPassword string
-
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), server.BcryptCost)
 	if err != nil {
 		(*renderParams)["error"] = ErrInternalError
 		server.shortnerTemplate.Execute(w, renderParams)
 		return
 	}
-	hashedPassword = string(hashed)
+	hashedPassword := string(hashed)
 
 	nonce, salt, encryptedLong, err := customcrypto.Encrypt(password, link)
 	if err != nil {

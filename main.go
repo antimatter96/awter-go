@@ -49,6 +49,12 @@ func main() {
 
 	shortner := server.Shortner(*templatePath, urlSevice)
 
+	r := newRouter(shortner)
+
+	http.ListenAndServe(":"+strconv.Itoa(*port), r)
+}
+
+func newRouter(shortner *server.Server) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -59,5 +65,5 @@ func main() {
 
 	r.Mount("/", shortner.R)
 
-	http.ListenAndServe(":"+strconv.Itoa(*port), r)
+	return r
 }
