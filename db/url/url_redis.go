@@ -75,13 +75,12 @@ func (u *UrlsRedis) Create(urlObj ShortURL) error {
 		return errPingRedis
 	}
 
-	conn.Send("MULTI")
-	conn.Send("HSET", urlObj.Short, "encrypted", urlObj.EncryptedLong)
-	conn.Send("HSET", urlObj.Short, "salt", urlObj.Salt)
-	conn.Send("HSET", urlObj.Short, "nonce", urlObj.Nonce)
-	conn.Send("HSET", urlObj.Short, "passwordHash", urlObj.PasswordHash)
-
-	_, errRedis := conn.Do("EXEC")
+	_, errRedis := conn.Do("HMSET", urlObj.Short,
+		"encrypted", urlObj.EncryptedLong,
+		"salt", urlObj.Salt,
+		"nonce", urlObj.Nonce,
+		"passwordHash", urlObj.PasswordHash,
+	)
 	if errRedis != nil {
 		return errRedis
 	}
