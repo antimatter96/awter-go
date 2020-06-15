@@ -13,6 +13,12 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
+const (
+	keyLen = 32
+	nonceLen = 24
+	saltLen = 12
+)
+
 var letterRunes = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 // GenerateRandomString is used to generate a string of given length
@@ -47,7 +53,7 @@ func Encrypt(password, data string) (nonceToSave, saltToSave, encryptedToSave st
 	}()
 	pwdBuff := []byte(password)
 
-	salt := make([]byte, 12)
+	salt := make([]byte, saltLen)
 	if _, err := rand.Read(salt); err != nil {
 		panic(err)
 	}
@@ -57,15 +63,15 @@ func Encrypt(password, data string) (nonceToSave, saltToSave, encryptedToSave st
 		panic(err)
 	}
 
-	nonce := make([]byte, 24)
+	var ekLimited [keyLen]byte
+	copy(ekLimited[:], ek)
+
+	nonce := make([]byte, nonceLen)
 	if _, err := rand.Read(nonce); err != nil {
 		panic(err)
 	}
 
-	var ekLimited [32]byte
-	copy(ekLimited[:], ek)
-
-	var secretKeyLimited [24]byte
+	var secretKeyLimited [nonceLen]byte
 	copy(secretKeyLimited[:], nonce)
 
 	encrypted := secretbox.Seal(nil, []byte(data), &secretKeyLimited, &ekLimited)
@@ -93,7 +99,7 @@ func Decrypt(password, data, nonceString, saltString string) (long string, err e
 	}
 
 	pwdBuff := []byte(password)
-	dk, err := scrypt.Key(pwdBuff, saltBytes, 16384, 8, 1, 32)
+	dk, err := scrypt.Key(pwdBuff, saltBytes, 16384, 8, 1, keyLen)
 	if err != nil {
 		panic(err)
 	}
@@ -103,10 +109,10 @@ func Decrypt(password, data, nonceString, saltString string) (long string, err e
 		panic(err)
 	}
 
-	var dkLimited [32]byte
+	var dkLimited [keyLen]byte
 	copy(dkLimited[:], dk)
 
-	var secretKeyLimited [24]byte
+	var secretKeyLimited [nonceLen]byte
 	copy(secretKeyLimited[:], nonceBytes)
 
 	encBytes, err := hex.DecodeString(data)
@@ -122,3 +128,6 @@ func Decrypt(password, data, nonceString, saltString string) (long string, err e
 	long = string(decrypted)
 	return
 }
+
+// customCrypt is all that you get
+type customCrypt struct {}
