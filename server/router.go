@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/gorilla/csrf"
+	"github.com/rs/zerolog/hlog"
 )
 
 func (server *Server) createRouter() {
@@ -18,6 +19,9 @@ func (server *Server) createRouter() {
 	r.Use(server.renderParamsInit)
 	r.Use(server.csrfMiddleware)
 	r.Use(server.addCSRFTokenToRenderParams)
+
+	r.Use(hlog.RemoteAddrHandler("ip"))
+	r.Use(hlog.RequestIDHandler("req_id", "Request-Id"))
 
 	r.Get("/", server.mainGet)
 	r.Get("/short", server.mainGet)

@@ -11,6 +11,7 @@ import (
 	"github.com/antimatter96/awter-go/db/url"
 	"github.com/asaskevich/govalidator"
 	"github.com/go-chi/chi"
+	"github.com/rs/zerolog/hlog"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -76,7 +77,9 @@ func (server *Server) shortPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	hlog.FromRequest(r).Info().Msg("bcrypt encrypt start")
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), server.BcryptCost)
+	hlog.FromRequest(r).Info().Msg("bcrypt encrypt end")
 	if err != nil {
 		(*renderParams)["error"] = ErrInternalError
 		server.shortnerTemplate.Execute(w, renderParams)
@@ -84,21 +87,26 @@ func (server *Server) shortPost(w http.ResponseWriter, r *http.Request) {
 	}
 	hashedPassword := string(hashed)
 
+	hlog.FromRequest(r).Info().Msg("secret box encrypt start")
 	nonce, salt, encryptedLong, err := customcrypto.Encrypt(password, link)
 	if err != nil {
 		(*renderParams)["error"] = ErrInternalError
 		server.shortnerTemplate.Execute(w, renderParams)
 		return
 	}
+	hlog.FromRequest(r).Info().Msg("secret box encrypt end")
 
 	urlObj := &url.ShortURL{Short: shortURL, Nonce: nonce, Salt: salt, EncryptedLong: encryptedLong, PasswordHash: hashedPassword}
 
+	hlog.FromRequest(r).Info().Msg("saving to redis start")
 	err = server.urlService.Create(*urlObj)
 	if err != nil {
+		hlog.FromRequest(r).Err(err).Msg("Shit broke")
 		(*renderParams)["error"] = ErrInternalError
 		server.shortnerTemplate.Execute(w, renderParams)
 		return
 	}
+	hlog.FromRequest(r).Info().Msg("saving to redis end")
 
 	(*renderParams)["shortURL"] = shortURL
 	(*renderParams)["passwordProtect"] = passwordProtect
@@ -146,7 +154,9 @@ func (server *Server) checkShortURLAndPassword(w http.ResponseWriter, r *http.Re
 
 	password := "default"
 	canPass := false
+	hlog.FromRequest(r).Info().Msg("bcrypt decrypt start")
 	err := bcrypt.CompareHashAndPassword([]byte(URLObject.PasswordHash), []byte(password))
+	hlog.FromRequest(r).Info().Msg("bcrypt decrypt end")
 	if err != nil {
 		if err == bcrypt.ErrMismatchedHashAndPassword {
 			(*renderParams)["shortURL"] = URLObject.Short
@@ -156,7 +166,9 @@ func (server *Server) checkShortURLAndPassword(w http.ResponseWriter, r *http.Re
 			if isPost {
 				password = r.FormValue("password")
 				if password != "" {
+					hlog.FromRequest(r).Info().Msg("bcrypt decrypt start")
 					err = bcrypt.CompareHashAndPassword([]byte(URLObject.PasswordHash), []byte(password))
+					hlog.FromRequest(r).Info().Msg("bcrypt decrypt end")
 					if err != nil {
 						if err == bcrypt.ErrMismatchedHashAndPassword {
 							(*renderParams)["error"] = ErrPasswordMatchFailed

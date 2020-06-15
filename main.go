@@ -4,11 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/hlog"
 
 	"github.com/antimatter96/awter-go/db"
 	"github.com/antimatter96/awter-go/db/url"
@@ -49,13 +52,17 @@ func main() {
 
 	shortner := server.Shortner(*templatePath, urlSevice)
 
-	r := newRouter(shortner)
+	logger := newLogger()
+
+	r := newRouter(shortner, logger)
 
 	http.ListenAndServe(":"+strconv.Itoa(*port), r)
 }
 
-func newRouter(shortner *server.Server) *chi.Mux {
+func newRouter(shortner *server.Server, logger zerolog.Logger) *chi.Mux {
 	r := chi.NewRouter()
+
+	r.Use(hlog.NewHandler(logger))
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -66,4 +73,12 @@ func newRouter(shortner *server.Server) *chi.Mux {
 	r.Mount("/", shortner.R)
 
 	return r
+}
+
+func newLogger() zerolog.Logger {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
+
+	log := zerolog.New(os.Stdout).With().Timestamp().Logger()
+
+	return log
 }
