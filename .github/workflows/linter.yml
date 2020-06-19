@@ -6,7 +6,8 @@ name: Linter
 # events but only for the master branch
 on:
   push:
-    branches: [ master ]
+    branches-ignore:
+      - 'master'
   pull_request:
     branches: [ master ]
 
@@ -25,3 +26,5 @@ jobs:
     # Runs a single command using the runners shell
     - name: Super-Linter
       uses: github/super-linter@v2.0.0
+      env:
+        VALIDATE_GO: true
