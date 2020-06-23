@@ -1,0 +1,9 @@
+Dockerfile
+.git
+.cache
+.vscode
+
+
+*.md
+
+*.log
