@@ -21,10 +21,12 @@ FROM build_base AS server_builder
 
 COPY . .
 
+RUN ls -halt
+
 ENV GOPROXY=direct
 
 # Build the binary
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -trimpath -o /go/bin/server -race -ldflags "-X 'main.build=${build_tag}'"
+RUN GOOS=linux GOARCH=amd64 go build -a -trimpath -o /go/bin/server -ldflags "-X 'main.build=${build_tag}'"
 
 FROM alpine
 RUN apk add ca-certificates

@@ -1,9 +1,21 @@
+.docker
+.dockerignore
 Dockerfile
 .git
 .cache
 .vscode
+.github
 
+Caddyfile
+caddy.sh
 
 *.md
 
 *.log
+
+.gitignore
+
+awter-go.code-workspace
+.DS_Store
+.deepsource.toml
+awter-go
