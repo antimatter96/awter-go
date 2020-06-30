@@ -8,5 +8,5 @@ enabled = true
 
   [analyzers.meta]
   import_paths = ["github.com/antimatter96/awter-go/db", "github.com/antimatter96/awter-go/server", "github.com/antimatter96/awter-go/customcrypto"]
-  import_path = "github.com/antimatter96/awter-go"
+  import_root = "github.com/antimatter96/awter-go"
 
