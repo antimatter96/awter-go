@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
 
+	"github.com/antimatter96/awter-go/customcrypto"
 	"github.com/antimatter96/awter-go/db"
 	"github.com/antimatter96/awter-go/db/url"
 	"github.com/antimatter96/awter-go/server"
@@ -25,9 +26,11 @@ func main() {
 	var port = flag.Int("port", 8080, "port")
 	var templatePath = flag.String("template", "./template", "the template directory")
 	var mySQLConnectionString = flag.String("mysqlURL", "user:password@/name?parseTime=true", "MySQL connection string")
-	var redisAddressstring = flag.String("redisURL", "127.0.0.1:6379", "redis connection string")
+	var redisAddressstring = flag.String("redisURL", "0.1:6379", "redis connection string")
 
 	flag.Parse()
+
+	fmt.Printf("Build params:\nPort: %d\nTemplate: %s\nMySQL: %s\nRedis: %s\n%s\n", *port, *templatePath, *mySQLConnectionString, *redisAddressstring, "HELLO")
 
 	var urlSevice url.Service
 	if *mySQLConnectionString != "" {
@@ -50,7 +53,10 @@ func main() {
 		panic("mysqlURL, redisURL both can't be null")
 	}
 
-	shortner := server.Shortner(*templatePath, urlSevice)
+	naclScrypt := &customcrypto.NaclScrypt{}
+	passwordChecker := &customcrypto.Bcrypt{Cost: 12}
+
+	shortner := server.Shortner(*templatePath, urlSevice, naclScrypt, passwordChecker)
 
 	logger := newLogger()
 

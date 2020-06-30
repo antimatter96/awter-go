@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/gorilla/securecookie"
 
+	"github.com/antimatter96/awter-go/customcrypto"
 	"github.com/antimatter96/awter-go/db/url"
 )
 
@@ -35,14 +36,13 @@ type Server struct {
 
 	urlService url.Service
 
-	BcryptCost int
+	customcrypto    customcrypto.CustomCrypto
+	passwordChecker customcrypto.PasswordChecker
 }
 
 // Shortner returns a
-func Shortner(templatePath string, urlService url.Service) *Server {
-	shortner := Server{urlService: urlService}
-
-	shortner.BcryptCost = 12
+func Shortner(templatePath string, urlService url.Service, customcryptoImplementation customcrypto.CustomCrypto, passwordChecker customcrypto.PasswordChecker) *Server {
+	shortner := Server{urlService: urlService, customcrypto: customcryptoImplementation}
 
 	shortner.parseTemplates(templatePath)
 	shortner.initCSRF("s6v9y$B&E)H@McQfThWmZq4t7w!z%C*F", true) // Hardcode now

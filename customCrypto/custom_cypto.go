@@ -4,20 +4,22 @@ package customcrypto
 
 import (
 	"crypto/rand"
-	"encoding/hex"
-	"fmt"
 	simplerand "math/rand"
 	"time"
-
-	"golang.org/x/crypto/nacl/secretbox"
-	"golang.org/x/crypto/scrypt"
 )
 
-const (
-	keyLen = 32
-	nonceLen = 24
-	saltLen = 12
-)
+// CustomCrypto encapsulates all the functions performed by
+// our crypto services
+type CustomCrypto interface {
+	Encrypt(string, string) (string, string, string, error)
+	Decrypt(string, string, string, string) (string, error)
+}
+
+type PasswordChecker interface {
+	IsSame([]byte, []byte) error
+	GetHash([]byte) ([]byte, error)
+	NoMatch(error) bool
+}
 
 var letterRunes = []byte("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -39,95 +41,3 @@ func GenerateRandomString(length int) (string, error) {
 	}
 	return string(arr), nil
 }
-
-func Encrypt(password, data string) (nonceToSave, saltToSave, encryptedToSave string, err error) {
-	defer func() {
-		if errRecovered := recover(); errRecovered != nil {
-			if value, isError := errRecovered.(error); isError {
-				nonceToSave = ""
-				saltToSave = ""
-				encryptedToSave = ""
-				fmt.Println("Error", value)
-			}
-		}
-	}()
-	pwdBuff := []byte(password)
-
-	salt := make([]byte, saltLen)
-	if _, err := rand.Read(salt); err != nil {
-		panic(err)
-	}
-
-	ek, err := scrypt.Key(pwdBuff, salt, 16384, 8, 1, 32)
-	if err != nil {
-		panic(err)
-	}
-
-	var ekLimited [keyLen]byte
-	copy(ekLimited[:], ek)
-
-	nonce := make([]byte, nonceLen)
-	if _, err := rand.Read(nonce); err != nil {
-		panic(err)
-	}
-
-	var secretKeyLimited [nonceLen]byte
-	copy(secretKeyLimited[:], nonce)
-
-	encrypted := secretbox.Seal(nil, []byte(data), &secretKeyLimited, &ekLimited)
-
-	nonceToSave = hex.EncodeToString(nonce)
-	saltToSave = hex.EncodeToString(salt)
-	encryptedToSave = hex.EncodeToString(encrypted)
-
-	return
-}
-
-func Decrypt(password, data, nonceString, saltString string) (long string, err error) {
-	defer func() {
-		if errRecovered := recover(); errRecovered != nil {
-			if value, isError := errRecovered.(error); isError {
-				long = ""
-				fmt.Println("Error", value)
-			}
-		}
-	}()
-
-	saltBytes, err := hex.DecodeString(saltString)
-	if err != nil {
-		panic(err)
-	}
-
-	pwdBuff := []byte(password)
-	dk, err := scrypt.Key(pwdBuff, saltBytes, 16384, 8, 1, keyLen)
-	if err != nil {
-		panic(err)
-	}
-
-	nonceBytes, err := hex.DecodeString(nonceString)
-	if err != nil {
-		panic(err)
-	}
-
-	var dkLimited [keyLen]byte
-	copy(dkLimited[:], dk)
-
-	var secretKeyLimited [nonceLen]byte
-	copy(secretKeyLimited[:], nonceBytes)
-
-	encBytes, err := hex.DecodeString(data)
-	if err != nil {
-		panic(err)
-	}
-
-	decrypted, ok := secretbox.Open(nil, []byte(encBytes), &secretKeyLimited, &dkLimited)
-	if !ok {
-		err = fmt.Errorf("cant decode")
-		panic(err)
-	}
-	long = string(decrypted)
-	return
-}
-
-// customCrypt is all that you get
-type customCrypt struct {}

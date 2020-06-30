@@ -12,7 +12,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/go-chi/chi"
 	"github.com/rs/zerolog/hlog"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func (server *Server) mainGet(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +77,7 @@ func (server *Server) shortPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hlog.FromRequest(r).Info().Msg("bcrypt encrypt start")
-	hashed, err := bcrypt.GenerateFromPassword([]byte(password), server.BcryptCost)
+	hashed, err := server.passwordChecker.GetHash([]byte(password))
 	hlog.FromRequest(r).Info().Msg("bcrypt encrypt end")
 	if err != nil {
 		(*renderParams)["error"] = ErrInternalError
@@ -88,7 +87,7 @@ func (server *Server) shortPost(w http.ResponseWriter, r *http.Request) {
 	hashedPassword := string(hashed)
 
 	hlog.FromRequest(r).Info().Msg("secret box encrypt start")
-	nonce, salt, encryptedLong, err := customcrypto.Encrypt(password, link)
+	nonce, salt, encryptedLong, err := server.customcrypto.Encrypt(password, link)
 	if err != nil {
 		(*renderParams)["error"] = ErrInternalError
 		server.shortnerTemplate.Execute(w, renderParams)
@@ -155,10 +154,10 @@ func (server *Server) checkShortURLAndPassword(w http.ResponseWriter, r *http.Re
 	password := "default"
 	canPass := false
 	hlog.FromRequest(r).Info().Msg("bcrypt decrypt start")
-	err := bcrypt.CompareHashAndPassword([]byte(URLObject.PasswordHash), []byte(password))
+	err := server.passwordChecker.IsSame([]byte(URLObject.PasswordHash), []byte(password))
 	hlog.FromRequest(r).Info().Msg("bcrypt decrypt end")
 	if err != nil {
-		if err == bcrypt.ErrMismatchedHashAndPassword {
+		if server.passwordChecker.NoMatch(err) {
 			(*renderParams)["shortURL"] = URLObject.Short
 			(*renderParams)["passwordProtect"] = true
 			(*renderParams)["error"] = ErrPasswordMissing
@@ -167,10 +166,10 @@ func (server *Server) checkShortURLAndPassword(w http.ResponseWriter, r *http.Re
 				password = r.FormValue("password")
 				if password != "" {
 					hlog.FromRequest(r).Info().Msg("bcrypt decrypt start")
-					err = bcrypt.CompareHashAndPassword([]byte(URLObject.PasswordHash), []byte(password))
+					err = server.passwordChecker.IsSame([]byte(URLObject.PasswordHash), []byte(password))
 					hlog.FromRequest(r).Info().Msg("bcrypt decrypt end")
 					if err != nil {
-						if err == bcrypt.ErrMismatchedHashAndPassword {
+						if server.passwordChecker.NoMatch(err) {
 							(*renderParams)["error"] = ErrPasswordMatchFailed
 						} else {
 							fmt.Printf("_%v_\n", err.Error())
@@ -193,7 +192,7 @@ func (server *Server) checkShortURLAndPassword(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	longURL, err := customcrypto.Decrypt(password, URLObject.EncryptedLong, URLObject.Nonce, URLObject.Salt)
+	longURL, err := server.customcrypto.Decrypt(password, URLObject.EncryptedLong, URLObject.Nonce, URLObject.Salt)
 	if err != nil {
 		(*renderParams)["error"] = ErrInternalError
 		server.elongateTemplate.Execute(w, renderParams)
