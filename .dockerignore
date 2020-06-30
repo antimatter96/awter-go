@@ -1,6 +1,8 @@
 .docker
+!.docker/nginx/nginx.conf
 .dockerignore
 Dockerfile
+docker-compose.yml
 .git
 .cache
 .vscode

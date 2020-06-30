@@ -1,5 +1,3 @@
-ARG build_tag
-
 FROM golang:1.14-alpine AS build_base
 
 ENV GOLANG_VERSION 1.14
@@ -21,12 +19,10 @@ FROM build_base AS server_builder
 
 COPY . .
 
-RUN ls -halt
-
-ENV GOPROXY=direct
+ARG build_tag
 
 # Build the binary
-RUN GOOS=linux GOARCH=amd64 go build -a -trimpath -o /go/bin/server -ldflags "-X 'main.build=${build_tag}'"
+RUN GOPROXY=direct GOOS=linux GOARCH=amd64 go build -a -trimpath -o /go/bin/server -ldflags "-X main.build=${build_tag}"
 
 FROM alpine
 RUN apk add ca-certificates
@@ -35,4 +31,4 @@ COPY template/* /go/bin/template/
 COPY --from=server_builder /go/bin/server /go/bin/server
 
 EXPOSE 8080
-ENTRYPOINT /go/bin/server --port=8080 --template="/go/bin/template"
+ENTRYPOINT ["/go/bin/server", "-port", "8080", "-template" , "/go/bin/template", "-mysqlURL", "", "-redisURL", "redis_server:6379"]

@@ -1,0 +1,10 @@
+:)
+
+./caddy.sh
+./server.sh
+
+docker-compose build --build-arg build_tag="$(date +%Y-%m-%d\ %H:%M)"
+
+docker-compose up --force-recreate
+docker-compose 
+

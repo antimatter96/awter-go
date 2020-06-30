@@ -1,0 +1,23 @@
+version: "3.6"
+services:
+  redis_server:
+    image: "redis:6.0.5-alpine"
+    command: redis-server
+    expose:
+      - 6379
+  goservice:
+    build:
+      context: .
+      dockerfile: "./.docker/Dockerfile"
+    expose:
+      - 8080
+    depends_on:
+      - "redis_server"
+  nginx:
+    build:
+      context: "."
+      dockerfile: "./.docker/nginx/Dockerfile"
+    ports:
+      - "80:80"
+    depends_on:
+      - "goservice"
