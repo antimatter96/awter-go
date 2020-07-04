@@ -26,11 +26,13 @@ func main() {
 	var port = flag.Int("port", 8080, "port")
 	var templatePath = flag.String("template", "./template", "the template directory")
 	var mySQLConnectionString = flag.String("mysqlURL", "user:password@/name?parseTime=true", "MySQL connection string")
-	var redisAddressstring = flag.String("redisURL", "0.1:6379", "redis connection string")
+	var redisAddressstring = flag.String("redisURL", "127.0.0.1:6379", "redis connection string")
 
 	flag.Parse()
 
-	fmt.Printf("Build params:\nPort: %d\nTemplate: %s\nMySQL: %s\nRedis: %s\n%s\n", *port, *templatePath, *mySQLConnectionString, *redisAddressstring, "HELLO")
+	fmt.Printf("\n===========\nConfig:\n\nPort: %d\nTemplate Directory: %s\nMySQL: %s\nRedis: %s\n===========\n\n", *port, *templatePath, *mySQLConnectionString, *redisAddressstring)
+
+	fmt.Println("Connecting to data source")
 
 	var urlSevice url.Service
 	if *mySQLConnectionString != "" {
@@ -62,6 +64,7 @@ func main() {
 
 	r := newRouter(shortner, logger)
 
+	fmt.Println("Listening to requests")
 	http.ListenAndServe(":"+strconv.Itoa(*port), r)
 }
 
