@@ -1,6 +1,6 @@
 package server
 
-import "text/template"
+import "html/template"
 
 func (server *Server) parseTemplates(templatePath string) {
 	server.shortnerTemplate = template.Must(template.ParseFiles(templatePath + "/shortner.html"))
