@@ -42,7 +42,7 @@ type Server struct {
 
 // Shortner returns a
 func Shortner(templatePath string, urlService url.Service, customcryptoImplementation customcrypto.CustomCrypto, passwordChecker customcrypto.PasswordChecker) *Server {
-	shortner := Server{urlService: urlService, customcrypto: customcryptoImplementation}
+	shortner := Server{urlService: urlService, customcrypto: customcryptoImplementation, passwordChecker: passwordChecker}
 
 	shortner.parseTemplates(templatePath)
 	shortner.initCSRF("s6v9y$B&E)H@McQfThWmZq4t7w!z%C*F", true) // Hardcode now
