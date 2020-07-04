@@ -13,16 +13,16 @@
 ## Basic Functioning
 
 Uses
-nacl/secretbox to encrypt the main URL
-scrypt to generate the key from the password
-bcrypt to check the password
+- nacl/secretbox to encrypt the main URL
+- scrypt to generate the key from the password
+- bcrypt to check the password
 
 ## Upcoming
 
-Testing
-Documentation
-Graceful shutdown
-API
+- Testing
+- Documentation
+- Graceful shutdown
+- API
 
 ---
 
