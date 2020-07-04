@@ -9,13 +9,7 @@
 
 <body>
 
-	<div class="container">
-		<div class="row">
-			<div class="col-12 text-center my-3">
-				<h2>Otter</h2>
-			</div>
-		</div>
-	</div>
+	{{ template "heading" . }}
 
 	<div class="container">
 		<div class="row">
@@ -73,6 +67,7 @@
 			}
 		}
 	</script>
+	{{ template "showHidePassword" . }}
 </body>
 
 </html>

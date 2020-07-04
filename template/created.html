@@ -9,13 +9,7 @@
 
 <body>
 
-	<div class="container">
-		<div class="row">
-			<div class="col-12 text-center my-3">
-				<h2>Otter</h2>
-			</div>
-		</div>
-	</div>
+	{{ template "heading" . }}
 
 	<div class="container">
 		<div class="row">
@@ -52,16 +46,8 @@
 	</div>
 	<!-- <script src="static/kjua.min.js"></script>
 	<script src="static/clipboard.min.js"></script> -->
+	{{ template "showHidePassword" . }}
 	<script>
-		function showHidePassword() {
-			let x = document.getElementById("urlPassword");
-			if (x.type === "password") {
-				x.type = "text";
-			} else {
-				x.type = "password";
-			}
-		}
-
 		function init() {
 			var shortURL = "{{ .shortURL }}"
 			window.history.pushState(null, 'Created', `/i/${shortURL}`);
