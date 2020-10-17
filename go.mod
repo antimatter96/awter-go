@@ -12,4 +12,5 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/rs/zerolog v1.19.0
 	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
+	golang.org/x/tools/gopls v0.4.3 // indirect
 )

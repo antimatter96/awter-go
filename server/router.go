@@ -36,6 +36,21 @@ func (server *Server) createRouter() {
 		r.Post("/", server.elongatePost)
 	})
 
+	r.Route("/user", func(r chi.Router) {
+		r.Use(server.urlCtx)
+
+		r.Get("/login", server.elongateGet)
+		r.Post("/login", server.elongatePost)
+
+		r.Get("/", server.elongateGet)
+
+		r.Get("/logout", server.elongateGet)
+		r.Post("/logout", server.elongatePost)
+
+		r.Get("/account", server.elongateGet)
+		r.Post("/account", server.elongatePost)
+	})
+
 	server.R = r
 }
 
